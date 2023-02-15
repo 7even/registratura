@@ -1,4 +1,7 @@
 {:aliases {:clj {:extra-deps {org.clojure/clojure {:mvn/version "1.11.1"}
                               ring/ring           {:mvn/version "1.9.6"}
-                              compojure/compojure {:mvn/version "1.7.0"}}
-                 :extra-paths ["src/clj"]}}}
+                              compojure/compojure {:mvn/version "1.7.0"}
+                              integrant/integrant {:mvn/version "0.8.0"}
+                              integrant/repl      {:mvn/version "0.3.2"}}
+                 :extra-paths ["src/clj"]}
+           :dev {:extra-paths ["dev"]}}}
