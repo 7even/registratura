@@ -1,12 +1,18 @@
 (ns registratura.core
-  (:require [compojure.core :refer [GET routes]]
+  (:require [aero.core :as aero]
+            [clojure.java.io :as io]
+            [compojure.core :refer [GET routes]]
             [compojure.route :as route]
             [integrant.core :as ig]
             [ring.adapter.jetty :refer [run-jetty]]))
 
-(def config
-  {:http/handler {:server-opts {:port 8888
-                                :join? false}}})
+(defmethod aero/reader 'ig/ref [_ _ value]
+  (ig/ref value))
+
+(defn config []
+  (-> "config.edn"
+      io/resource
+      aero/read-config))
 
 (defn app-routes []
   (routes (GET "/" [] "<h1>Hello!</h1>")
@@ -24,4 +30,4 @@
 
 (defn -main []
   (println "Hello!")
-  (ig/init config))
+  (ig/init (config)))

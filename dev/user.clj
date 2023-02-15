@@ -3,7 +3,7 @@
             [integrant.repl :refer [go halt set-prep!]]
             [registratura.core :refer [config]]))
 
-(set-prep! (constantly config))
+(set-prep! config)
 
 (set-refresh-dirs "dev" "src/clj")
 
