@@ -1,3 +1,7 @@
-{:http/handler {:server-opts {:port #long #or [#env HTTP_PORT
+{:jdbc/connection {:dbtype "postgres"
+                   :dbname #or [#env DB_NAME
+                                "registratura"]}
+ :http/handler {:db-conn #ig/ref :jdbc/connection
+                :server-opts {:port #long #or [#env HTTP_PORT
                                                8888]
                               :join? false}}}

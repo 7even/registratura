@@ -10,4 +10,7 @@
 (defn system []
   integrant.repl.state/system)
 
+(defn db-conn []
+  (:jdbc/connection (system)))
+
 (def reset integrant.repl/reset)
