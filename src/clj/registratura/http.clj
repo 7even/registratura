@@ -1,15 +1,28 @@
 (ns registratura.http
-  (:require [compojure.core :refer [GET routes]]
-            [compojure.route :as route]
+  (:require [bidi.ring :refer [make-handler]]
             [ring.adapter.jetty :refer [run-jetty]]))
 
-(defn app-routes [db-conn]
-  (routes (GET "/" [] "<h1>Hello!</h1>")
-          (route/not-found {:status 404
-                            :body "Not found"})))
+(defn- get-patients [db-conn]
+  (fn [req]
+    {:status 200
+     :headers {"Content-Type" "application/edn"}
+     :body (pr-str [{:patient/id 1
+                     :patient/first-name "Vsevolod"
+                     :patient/last-name "Romashov"
+                     :patient/gender "male"
+                     :patient/birthday #inst "1984-09-27"
+                     :patient/address "Tbilisi, Anjafaridze, 4"
+                     :patient/insurance-number "777"}])}))
+
+(defn handler [db-conn]
+  (let [routes ["/api" {:get {"/patients" (get-patients db-conn)}
+                        true (fn [ret]
+                               {:status 404
+                                :body "Not Found"})}]]
+    (make-handler routes)))
 
 (defn start [{:keys [db-conn server-opts]}]
-  (let [handler (app-routes db-conn)]
+  (let [handler (handler db-conn)]
     (run-jetty handler server-opts)))
 
 (defn stop [server]
