@@ -40,8 +40,7 @@
         wrap-html-page-response)))
 
 (defn start [{:keys [db-conn server-opts]}]
-  (let [handler (handler db-conn)]
-    (run-jetty handler server-opts)))
+  (run-jetty (handler db-conn) server-opts))
 
 (defn stop [server]
   (.stop server))
