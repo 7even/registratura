@@ -4,6 +4,9 @@
                               ;; HTTP
                               ring/ring {:mvn/version "1.9.6"}
 
+                              ;; HTML
+                              hiccup/hiccup {:mvn/version "1.0.5"}
+
                               ;; System
                               integrant/integrant {:mvn/version "0.8.0"}
                               integrant/repl      {:mvn/version "0.3.2"}
