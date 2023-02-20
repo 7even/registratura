@@ -13,7 +13,7 @@
                    [query])
                  jdbc/snake-kebab-opts))
 
-(defmethod dsql.core/to-sql LocalDate
+(defmethod ql/to-sql LocalDate
   [acc opts date]
   (-> acc
       (conj (str (ql/string-litteral date) "::date"))))
@@ -78,11 +78,13 @@
        normalize-patient))
 
 (defn create-patient [db-conn attrs]
-  (make-query db-conn
-              {:ql/type :pg/insert
-               :into :patients
-               :value (denormalize-patient attrs)
-               :returning :id}))
+  (-> (make-query db-conn
+                  {:ql/type :pg/insert
+                   :into :patients
+                   :value (denormalize-patient attrs)
+                   :returning :id})
+      first
+      :patients/id))
 
 (defn update-patient [db-conn id new-attrs]
   (make-query db-conn
