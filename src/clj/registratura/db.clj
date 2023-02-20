@@ -1,4 +1,5 @@
 (ns registratura.db
+  "Functions for reading from & writing to database."
   (:require [camel-snake-kebab.core :refer [->snake_case_keyword]]
             [clojure.java.io :as io]
             [dsql.core :as ql]
@@ -6,7 +7,10 @@
             [next.jdbc :as jdbc])
   (:import [java.time LocalDate]))
 
-(defn make-raw-query [db-conn query]
+(defn make-raw-query
+  "Runs `query` (a string or a vector of string and arbitrary arguments)
+  against `db-conn` and returns the results."
+  [db-conn query]
   (jdbc/execute! db-conn
                  (if (vector? query)
                    query
@@ -18,12 +22,18 @@
   (-> acc
       (conj (str (ql/string-litteral date) "::date"))))
 
-(defn make-query [db-conn query]
+(defn make-query
+  "Processes the `query` map using dsql library, then runs it against `db-conn`,
+  returning the results."
+  [db-conn query]
   (jdbc/execute! db-conn
                  (dsql/format query)
                  jdbc/snake-kebab-opts))
 
-(defn- fresh-db? [db-conn]
+(defn- fresh-db?
+  "Returns `true` if database at `db-conn` is empty (in fact just checks
+  if the \"patients\" table exists), `false` otherwise."
+  [db-conn]
   (let [tables-query {:select 1
                       :from :information_schema.tables
                       :where {:ql/type :pg/and
@@ -32,21 +42,41 @@
                               :name [:= :table_name [:pg/param "patients"]]}}]
     (empty? (make-query db-conn tables-query))))
 
-(defn- get-db-schema []
+(defn- get-db-schema
+  "Returns database schema as an SQL string that can be run on an empty
+  database in order to get the desired database structure."
+  []
   (-> "schema.sql"
       io/resource
       slurp))
 
-(defn start [db-spec]
+(defn start
+  "Establishes the connection to database specified by `db-spec`, then migrates
+  it if required."
+  [db-spec]
   (let [conn (jdbc/get-connection db-spec)]
     (when (fresh-db? conn)
       (make-raw-query conn (get-db-schema)))
     conn))
 
-(defn stop [conn]
+(defn stop
+  "Closes the `conn` (database connection)."
+  [conn]
   (.close conn))
 
-(defn- normalize-patient [patient]
+(defn truncate-patients
+  "Deletes all patients from the database at `db-conn` and resets the patient id
+  sequence to 1.
+
+  Supposed to be run after each test to clean the database."
+  [db-conn]
+  (make-raw-query db-conn
+                  "TRUNCATE patients RESTART IDENTITY"))
+
+(defn- normalize-patient
+  "Transforms the `patient` entity map from format returned by next.jdbc to
+  a format preferred by the application."
+  [patient]
   (cond-> patient
     :always
     (update-keys (fn [attr-full-name]
@@ -63,7 +93,10 @@
     (contains? patient :patients/birthday)
     (update :patient/birthday #(.toLocalDate %))))
 
-(defn- denormalize-patient [patient]
+(defn- denormalize-patient
+  "Transforms the `patient` entity map from application's preferred format
+  to a format recognized by next.jdbc."
+  [patient]
   (cond-> patient
     (contains? patient :patient/gender)
     (update :patient/gender name)
@@ -71,13 +104,19 @@
     :always
     (update-keys ->snake_case_keyword)))
 
-(defn list-patients [db-conn]
+(defn list-patients
+  "Returns all patients from the database at `db-conn` as a vector of
+  entity maps."
+  [db-conn]
   (->> (make-query db-conn
                    {:select :*
                     :from :patients})
        (mapv normalize-patient)))
 
-(defn get-patient [db-conn id]
+(defn get-patient
+  "Returns patient identified by `id` from the database at `db-conn`
+  as an entity map."
+  [db-conn id]
   (let [[patient] (make-query db-conn
                               {:select :*
                                :from :patients
@@ -85,7 +124,10 @@
     (when (some? patient)
       (normalize-patient patient))))
 
-(defn create-patient [db-conn attrs]
+(defn create-patient
+  "Creates a new patient with `attrs` in the database at `db-conn` and returns
+  its id."
+  [db-conn attrs]
   (-> (make-query db-conn
                   {:ql/type :pg/insert
                    :into :patients
@@ -95,19 +137,20 @@
       normalize-patient
       :patient/id))
 
-(defn update-patient [db-conn id new-attrs]
+(defn update-patient
+  "Updates the patient identified by `id` in the database at `db-conn`
+  with `new-attrs`."
+  [db-conn id new-attrs]
   (make-query db-conn
               {:ql/type :pg/update
                :update :patients
                :set (denormalize-patient new-attrs)
                :where [:= :id [:pg/param id]]}))
 
-(defn delete-patient [db-conn id]
+(defn delete-patient
+  "Deletes the patient identified by `id` from the database at `db-conn`."
+  [db-conn id]
   (make-query db-conn
               {:ql/type :pg/delete
                :from :patients
                :where [:= :id [:pg/param id]]}))
-
-(defn truncate-patients [db-conn]
-  (make-raw-query db-conn
-                  "TRUNCATE patients RESTART IDENTITY"))
