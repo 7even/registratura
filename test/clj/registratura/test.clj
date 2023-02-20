@@ -1,7 +1,8 @@
 (ns registratura.test
   (:require [integrant.core :as ig]
             [registratura.core :as core]
-            [registratura.db :as db]))
+            [registratura.db :as db]
+            [tick.core :as t]))
 
 (def ^:private config
   (core/config :test))
@@ -21,3 +22,15 @@
       (db/truncate-patients @db-conn)
       (ig/halt-key! :jdbc/connection @db-conn)
       (reset! db-conn nil))))
+
+(def patient-attrs
+  {:patient/first-name "Vsevolod"
+   :patient/middle-name "Borisovych"
+   :patient/last-name "Romashov"
+   :patient/gender :gender/male
+   :patient/birthday (t/date "1984-09-27")
+   :patient/address "Tbilisi"
+   :patient/insurance-number "123"})
+
+(defn create-patient []
+  (db/create-patient @db-conn patient-attrs))

@@ -1,22 +1,9 @@
 (ns registratura.db-test
-  (:require [clojure.test :refer [use-fixtures deftest testing is]]
+  (:require [clojure.test :refer [deftest is use-fixtures]]
             [registratura.db :as sut]
-            [registratura.test :refer :all]
-            [tick.core :as t]))
+            [registratura.test :refer :all]))
 
 (use-fixtures :each with-db)
-
-(def ^:private patient-attrs
-  {:patient/first-name "Vsevolod"
-   :patient/middle-name "Borisovych"
-   :patient/last-name "Romashov"
-   :patient/gender :gender/male
-   :patient/birthday (t/date "1984-09-27")
-   :patient/address "Tbilisi"
-   :patient/insurance-number "123"})
-
-(defn- create-patient []
-  (sut/create-patient @db-conn patient-attrs))
 
 (deftest list-patients-test
   (create-patient)

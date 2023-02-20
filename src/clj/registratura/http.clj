@@ -1,30 +1,31 @@
 (ns registratura.http
   (:require [bidi.ring :refer [make-handler]]
+            [registratura.db :as db]
             [registratura.html :as html]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.resource :refer [wrap-resource]]
-            [ring.util.response :refer [content-type response]]))
+            [ring.util.response :refer [content-type not-found response]]))
 
-(defn- get-patients [db-conn]
-  (fn [req]
-    [{:patient/id 1
-      :patient/first-name "Vsevolod"
-      :patient/last-name "Romashov"
-      :patient/gender "male"
-      :patient/birthday #inst "1984-09-27"
-      :patient/address "Tbilisi, Anjafaridze, 4"
-      :patient/insurance-number "777"}]))
+(defn- list-patients [db-conn _]
+  (response (db/list-patients db-conn)))
+
+(defn- get-patient [db-conn {:keys [params]}]
+  (let [id (-> params :id parse-long)]
+    (if-let [patient (db/get-patient db-conn id)]
+      (response patient)
+      (not-found nil))))
 
 (defn- make-routes [db-conn]
-  ["" {"/api" {:get {"/patients" (get-patients db-conn)}}}])
+  [""
+   {"/api" {:get {"/patients" {"" (partial list-patients db-conn)
+                               ["/" [#"\d+" :id]] (partial get-patient db-conn)}}}}])
 
 (defn- wrap-edn-response [handler]
   (fn [request]
-    (when-let [response-body (handler request)]
-      (-> response-body
-          pr-str
-          response
-          (content-type "application/edn")))))
+    (when-let [handler-response (handler request)]
+      (cond-> handler-response
+        (some? (:body handler-response)) (update :body pr-str)
+        (some? (:body handler-response)) (content-type "application/edn")))))
 
 (defn- wrap-html-page-response [handler]
   (fn [request]
