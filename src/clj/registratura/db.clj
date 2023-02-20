@@ -78,12 +78,12 @@
        (mapv normalize-patient)))
 
 (defn get-patient [db-conn id]
-  (->> (make-query db-conn
-                   {:select :*
-                    :from :patients
-                    :where [:= :id [:pg/param id]]})
-       first
-       normalize-patient))
+  (let [[patient] (make-query db-conn
+                              {:select :*
+                               :from :patients
+                               :where [:= :id [:pg/param id]]})]
+    (when (some? patient)
+      (normalize-patient patient))))
 
 (defn create-patient [db-conn attrs]
   (-> (make-query db-conn
