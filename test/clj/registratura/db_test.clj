@@ -6,21 +6,17 @@
 
 (use-fixtures :each with-db)
 
+(def ^:private patient-attrs
+  {:patient/first-name "Vsevolod"
+   :patient/middle-name "Borisovych"
+   :patient/last-name "Romashov"
+   :patient/gender :gender/male
+   :patient/birthday (t/date "1984-09-27")
+   :patient/address "Tbilisi"
+   :patient/insurance-number "123"})
+
 (deftest list-patients-test
-  (sut/create-patient @db-conn
-                      {:first_name "Vsevolod"
-                       :last_name "Romashov"
-                       :gender "male"
-                       :birthday #inst "1984-09-27"
-                       :address "Tbilisi"
-                       :insurance_number "123"})
+  (sut/create-patient @db-conn patient-attrs)
   (let [patients (sut/list-patients @db-conn)]
-    (is (= [{:patients/id 1
-             :patients/first-name "Vsevolod"
-             :patients/middle-name nil
-             :patients/last-name "Romashov"
-             :patients/gender "male"
-             :patients/birthday (t/date "1984-09-27")
-             :patients/address "Tbilisi"
-             :patients/insurance-number "123"}]
+    (is (= [(assoc patient-attrs :patient/id 1)]
            patients))))

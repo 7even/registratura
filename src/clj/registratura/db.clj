@@ -1,8 +1,10 @@
 (ns registratura.db
-  (:require [clojure.java.io :as io]
+  (:require [camel-snake-kebab.core :refer [->snake_case_keyword]]
+            [clojure.java.io :as io]
             [dsql.core :as ql]
             [dsql.pg :as dsql]
-            [next.jdbc :as jdbc]))
+            [next.jdbc :as jdbc])
+  (:import [java.time LocalDate]))
 
 (defn make-raw-query [db-conn query]
   (jdbc/execute! db-conn
@@ -11,7 +13,7 @@
                    [query])
                  jdbc/snake-kebab-opts))
 
-(defmethod dsql.core/to-sql java.util.Date
+(defmethod dsql.core/to-sql LocalDate
   [acc opts date]
   (-> acc
       (conj (str (ql/string-litteral date) "::date"))))
@@ -44,27 +46,42 @@
 (defn stop [conn]
   (.close conn))
 
+(defn- normalize-patient [patient]
+  (-> patient
+      (update-keys (fn [attr-full-name]
+                     (let [attr-ns (namespace attr-full-name)
+                           attr-name (name attr-full-name)]
+                       (keyword (if (= attr-ns "patients")
+                                  "patient"
+                                  attr-ns)
+                                attr-name))))
+      (update :patient/gender #(keyword "gender" %))
+      (update :patient/birthday #(.toLocalDate %))))
+
+(defn- denormalize-patient [patient]
+  (-> patient
+      (update :patient/gender name)
+      (update-keys ->snake_case_keyword)))
+
 (defn list-patients [db-conn]
   (->> (make-query db-conn
                    {:select :*
                     :from :patients})
-       (map (fn [patient]
-              (update patient
-                      :patients/birthday
-                      #(.toLocalDate %))))))
+       (mapv normalize-patient)))
 
 (defn get-patient [db-conn id]
   (->> (make-query db-conn
                    {:select :*
                     :from :patients
                     :where [:= :id [:pg/param id]]})
-       first))
+       first
+       normalize-patient))
 
 (defn create-patient [db-conn attrs]
   (make-query db-conn
               {:ql/type :pg/insert
                :into :patients
-               :value attrs
+               :value (denormalize-patient attrs)
                :returning :id}))
 
 (defn update-patient [db-conn id new-attrs]
