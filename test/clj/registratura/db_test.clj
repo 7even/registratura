@@ -15,14 +15,17 @@
    :patient/address "Tbilisi"
    :patient/insurance-number "123"})
 
+(defn- create-patient []
+  (sut/create-patient @db-conn patient-attrs))
+
 (deftest list-patients-test
-  (sut/create-patient @db-conn patient-attrs)
+  (create-patient)
   (let [patients (sut/list-patients @db-conn)]
     (is (= [(assoc patient-attrs :patient/id 1)]
            patients))))
 
 (deftest get-patient-test
-  (sut/create-patient @db-conn patient-attrs)
+  (create-patient)
   (let [patient (sut/get-patient @db-conn 1)]
     (is (= (assoc patient-attrs :patient/id 1)
            patient))))
@@ -34,3 +37,9 @@
            (->> (sut/list-patients @db-conn)
                 first
                 :patient/id)))))
+
+(deftest update-patient-test
+  (create-patient)
+  (sut/update-patient @db-conn 1 {:patient/insurance-number "456"})
+  (let [patient (sut/get-patient @db-conn 1)]
+    (is (= "456" (:patient/insurance-number patient)))))

@@ -47,21 +47,29 @@
   (.close conn))
 
 (defn- normalize-patient [patient]
-  (-> patient
-      (update-keys (fn [attr-full-name]
-                     (let [attr-ns (namespace attr-full-name)
-                           attr-name (name attr-full-name)]
-                       (keyword (if (= attr-ns "patients")
-                                  "patient"
-                                  attr-ns)
-                                attr-name))))
-      (update :patient/gender #(keyword "gender" %))
-      (update :patient/birthday #(.toLocalDate %))))
+  (cond-> patient
+    :always
+    (update-keys (fn [attr-full-name]
+                   (let [attr-ns (namespace attr-full-name)
+                         attr-name (name attr-full-name)]
+                     (keyword (if (= attr-ns "patients")
+                                "patient"
+                                attr-ns)
+                              attr-name))))
+
+    (contains? patient :patients/gender)
+    (update :patient/gender #(keyword "gender" %))
+
+    (contains? patient :patients/birthday)
+    (update :patient/birthday #(.toLocalDate %))))
 
 (defn- denormalize-patient [patient]
-  (-> patient
-      (update :patient/gender name)
-      (update-keys ->snake_case_keyword)))
+  (cond-> patient
+    (contains? patient :patient/gender)
+    (update :patient/gender name)
+
+    :always
+    (update-keys ->snake_case_keyword)))
 
 (defn list-patients [db-conn]
   (->> (make-query db-conn
@@ -84,13 +92,14 @@
                    :value (denormalize-patient attrs)
                    :returning :id})
       first
-      :patients/id))
+      normalize-patient
+      :patient/id))
 
 (defn update-patient [db-conn id new-attrs]
   (make-query db-conn
               {:ql/type :pg/update
                :update :patients
-               :set new-attrs
+               :set (denormalize-patient new-attrs)
                :where [:= :id [:pg/param id]]}))
 
 (defn delete-patient [db-conn id]
