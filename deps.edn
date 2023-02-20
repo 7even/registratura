@@ -1,4 +1,5 @@
-{:deps {bidi/bidi {:mvn/version "2.1.6"}}
+{:deps {bidi/bidi {:mvn/version "2.1.6"}
+        tick/tick {:mvn/version "0.5.0"}}
  :aliases {:clj {:extra-deps {org.clojure/clojure {:mvn/version "1.11.1"}
 
                               ;; HTTP

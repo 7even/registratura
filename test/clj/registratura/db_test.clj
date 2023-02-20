@@ -1,7 +1,8 @@
 (ns registratura.db-test
   (:require [clojure.test :refer [use-fixtures deftest testing is]]
             [registratura.db :as sut]
-            [registratura.test :refer :all]))
+            [registratura.test :refer :all]
+            [tick.core :as t]))
 
 (use-fixtures :each with-db)
 
@@ -19,8 +20,7 @@
              :patients/middle-name nil
              :patients/last-name "Romashov"
              :patients/gender "male"
-             ;; :patients/birthday #inst "1984-09-27"
+             :patients/birthday (t/date "1984-09-27")
              :patients/address "Tbilisi"
              :patients/insurance-number "123"}]
-           (->> patients
-                (map #(dissoc % :patients/birthday)))))))
+           patients))))

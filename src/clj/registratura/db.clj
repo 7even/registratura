@@ -45,9 +45,13 @@
   (.close conn))
 
 (defn list-patients [db-conn]
-  (make-query db-conn
-              {:select :*
-               :from :patients}))
+  (->> (make-query db-conn
+                   {:select :*
+                    :from :patients})
+       (map (fn [patient]
+              (update patient
+                      :patients/birthday
+                      #(.toLocalDate %))))))
 
 (defn get-patient [db-conn id]
   (->> (make-query db-conn
