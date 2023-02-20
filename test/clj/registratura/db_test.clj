@@ -43,3 +43,9 @@
   (sut/update-patient @db-conn 1 {:patient/insurance-number "456"})
   (let [patient (sut/get-patient @db-conn 1)]
     (is (= "456" (:patient/insurance-number patient)))))
+
+(deftest delete-patient-test
+  (create-patient)
+  (is (some? (sut/get-patient @db-conn 1)))
+  (sut/delete-patient @db-conn 1)
+  (is (nil? (sut/get-patient @db-conn 1))))
