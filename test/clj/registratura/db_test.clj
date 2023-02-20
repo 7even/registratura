@@ -21,6 +21,12 @@
     (is (= [(assoc patient-attrs :patient/id 1)]
            patients))))
 
+(deftest get-patient-test
+  (sut/create-patient @db-conn patient-attrs)
+  (let [patient (sut/get-patient @db-conn 1)]
+    (is (= (assoc patient-attrs :patient/id 1)
+           patient))))
+
 (deftest create-patient-test
   (let [new-patient-id (sut/create-patient @db-conn patient-attrs)]
     (is (= 1
