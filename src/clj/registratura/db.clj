@@ -75,3 +75,7 @@
               {:ql/type :pg/delete
                :from :patients
                :where [:= :id [:pg/param id]]}))
+
+(defn truncate-patients [db-conn]
+  (make-raw-query db-conn
+                  "TRUNCATE patients RESTART IDENTITY"))

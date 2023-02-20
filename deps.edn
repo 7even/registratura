@@ -19,4 +19,7 @@
                               org.postgresql/postgresql         {:mvn/version "42.5.3"}
                               io.github.HealthSamurai/dsql      {:git/sha "eb68b090c2f2e5a2abca4afb58af722abe2ab34c"}}
                  :extra-paths ["src/clj" "resources"]}
-           :dev {:extra-paths ["dev"]}}}
+           :dev {:extra-paths ["dev"]}
+           :test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.77.1236"}}
+                  :extra-paths ["test/clj"]
+                  :main-opts ["-m" "kaocha.runner"]}}}

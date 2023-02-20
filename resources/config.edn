@@ -1,6 +1,7 @@
 {:jdbc/connection {:dbtype "postgres"
-                   :dbname #or [#env DB_NAME
-                                "registratura"]}
+                   :dbname #profile {:development "registratura"
+                                     :test "registratura_test"
+                                     :default #env DB_NAME}}
  :http/handler {:db-conn #ig/ref :jdbc/connection
                 :server-opts {:port #long #or [#env HTTP_PORT
                                                8888]

@@ -8,10 +8,12 @@
 (defmethod aero/reader 'ig/ref [_ _ value]
   (ig/ref value))
 
-(defn config []
-  (-> "config.edn"
-      io/resource
-      aero/read-config))
+(defn config
+  ([] (config :development))
+  ([profile]
+   (-> "config.edn"
+       io/resource
+       (aero/read-config {:profile profile}))))
 
 (defmethod ig/init-key :jdbc/connection [_ db-spec]
   (println ";; Connecting to Postgres")
