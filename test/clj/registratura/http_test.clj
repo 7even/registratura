@@ -64,3 +64,15 @@
                                          {:patient/first-name :foo
                                           :patient/last-name :bar})]
       (is (= 422 status)))))
+
+(deftest update-patient-test
+  (testing "with valid patient attributes"
+    (let [{:keys [status]} (get-response :patch
+                                         "/api/patients/1"
+                                         {:patient/middle-name "foobar"})]
+      (is (= 200 status))))
+  (testing "with invalid patient attributes"
+    (let [{:keys [status]} (get-response :patch
+                                         "/api/patients/1"
+                                         {:patient/middle-name :foo/bar})]
+      (is (= 422 status)))))

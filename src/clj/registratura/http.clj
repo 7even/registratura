@@ -65,6 +65,15 @@
                 :patient/address
                 :patient/insurance-number]))
 
+(s/def ::update-patient
+  (s/keys :opt [:patient/first-name
+                :patient/middle-name
+                :patient/last-name
+                :patient/gender
+                :patient/birthday
+                :patient/address
+                :patient/insurance-number]))
+
 (defn- list-patients [db-conn _]
   (response (db/list-patients db-conn)))
 
@@ -81,11 +90,21 @@
       (created {:patient/id new-patient-id}))
     (unprocessable-entity (s/explain-data ::create-patient form-params))))
 
+(defn- update-patient [db-conn {:keys [params form-params]}]
+  (if (s/valid? ::update-patient form-params)
+    (let [id (-> params :id parse-long)
+          new-attrs (select-keys form-params patient-attr-names)]
+      (when (seq new-attrs)
+        (db/update-patient db-conn id new-attrs))
+      (response nil))
+    (unprocessable-entity (s/explain-data ::update-patient form-params))))
+
 (defn- make-routes [db-conn]
   [""
    {"/api" {:get {"/patients" {"" (partial list-patients db-conn)
                                ["/" [#"\d+" :id]] (partial get-patient db-conn)}}
-            :post {"/patients" (partial create-patient db-conn)}}}])
+            :post {"/patients" (partial create-patient db-conn)}
+            :patch {"/patients" {["/" [#"\d+" :id]] (partial update-patient db-conn)}}}}])
 
 (defn- wrap-edn-request [handler]
   (fn [request]
