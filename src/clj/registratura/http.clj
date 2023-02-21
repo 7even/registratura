@@ -101,10 +101,10 @@
 
 (defn- make-routes [db-conn]
   [""
-   {"/api" {:get {"/patients" {"" (partial list-patients db-conn)
-                               ["/" [#"\d+" :id]] (partial get-patient db-conn)}}
-            :post {"/patients" (partial create-patient db-conn)}
-            :patch {"/patients" {["/" [#"\d+" :id]] (partial update-patient db-conn)}}}}])
+   {"/api" {"/patients" {"" {:get (partial list-patients db-conn)
+                             :post (partial create-patient db-conn)}
+                         ["/" [#"\d+" :id]] {:get (partial get-patient db-conn)
+                                             :patch (partial update-patient db-conn)}}}}])
 
 (defn- wrap-edn-request [handler]
   (fn [request]
