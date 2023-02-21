@@ -4,7 +4,10 @@
             [registratura.html :as html]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.resource :refer [wrap-resource]]
-            [ring.util.response :refer [content-type not-found response]]))
+            [ring.util.response :refer [content-type not-found response]]
+            [time-literals.read-write]))
+
+(time-literals.read-write/print-time-literals-clj!)
 
 (defn- list-patients [db-conn _]
   (response (db/list-patients db-conn)))

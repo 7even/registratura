@@ -3,8 +3,7 @@
             [clojure.test :refer [deftest is testing use-fixtures]]
             [registratura.http :as sut]
             [registratura.test :refer :all]
-            [ring.mock.request :as mock]
-            [time-literals.read-write]))
+            [ring.mock.request :as mock]))
 
 (use-fixtures :each with-db)
 
