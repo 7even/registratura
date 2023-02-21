@@ -1,0 +1,20 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+      - name: Setup Clojure
+        uses: DeLaGuardo/setup-clojure@10.1
+        with:
+          cli: '1.11.1.1200'
+      - name: Execute some Clojure code
+        run: clojure -e "(+ 1 1)"
