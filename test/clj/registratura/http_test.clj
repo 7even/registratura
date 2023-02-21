@@ -66,13 +66,20 @@
       (is (= 422 status)))))
 
 (deftest update-patient-test
+  (create-patient)
   (testing "with valid patient attributes"
     (let [{:keys [status]} (get-response :patch
                                          "/api/patients/1"
                                          {:patient/middle-name "foobar"})]
-      (is (= 200 status))))
+      (is (= 200 status))
+      (let [{updated-patient :body} (get-response :get "/api/patients/1")]
+        (is (= "foobar"
+               (:patient/middle-name updated-patient))))))
   (testing "with invalid patient attributes"
     (let [{:keys [status]} (get-response :patch
                                          "/api/patients/1"
                                          {:patient/middle-name :foo/bar})]
-      (is (= 422 status)))))
+      (is (= 422 status))
+      (let [{not-updated-patient :body} (get-response :get "/api/patients/1")]
+        (is (= "foobar"
+               (:patient/middle-name not-updated-patient)))))))
