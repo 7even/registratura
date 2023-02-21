@@ -14,11 +14,12 @@
   ([method url] (get-response method url {}))
   ([method url params]
    (let [handler (make-handler)
+         include-body? (contains? #{:post :patch} method)
          parse-edn (fn [edn]
                      (edn/read-string {:readers time-literals.read-write/tags} edn))]
      (cond-> (mock/request method url)
-       (not= method :get) (mock/content-type "application/edn")
-       (not= method :get) (mock/body (pr-str params))
+       include-body? (mock/content-type "application/edn")
+       include-body? (mock/body (pr-str params))
        :always handler
        :always (update :body parse-edn)))))
 
@@ -45,3 +46,21 @@
     (let [{:keys [status body]} (get-response :get "/api/patients/777")]
       (is (= 404 status))
       (is (nil? body)))))
+
+(deftest create-patient-test
+  (testing "with valid patient attributes"
+    (let [{:keys [status body]} (get-response :post
+                                              "/api/patients"
+                                              patient-attrs)]
+      (is (= 200 status))
+      (is (= {:patient/id 1}
+             body))
+      (let [{new-patients-list :body} (get-response :get "/api/patients")]
+        (is (= [(assoc patient-attrs :patient/id 1)]
+               new-patients-list)))))
+  (testing "with invalid patient attributes"
+    (let [{:keys [status]} (get-response :post
+                                         "/api/patients"
+                                         {:patient/first-name :foo
+                                          :patient/last-name :bar})]
+      (is (= 422 status)))))
