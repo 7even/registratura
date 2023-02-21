@@ -54,7 +54,13 @@
   "Establishes the connection to database specified by `db-spec`, then migrates
   it if required."
   [db-spec]
-  (let [conn (jdbc/get-connection db-spec)]
+  (let [conn (->> db-spec
+                  (reduce-kv (fn [acc k v]
+                               (if (some? v)
+                                 (assoc acc k v)
+                                 acc))
+                             {})
+                  jdbc/get-connection)]
     (when (fresh-db? conn)
       (make-raw-query conn (get-db-schema)))
     conn))
