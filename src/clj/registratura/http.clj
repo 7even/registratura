@@ -99,12 +99,18 @@
       (response nil))
     (unprocessable-entity (s/explain-data ::update-patient form-params))))
 
+(defn- delete-patient [db-conn {:keys [params]}]
+  (let [id (-> params :id parse-long)]
+    (db/delete-patient db-conn id)
+    (response nil)))
+
 (defn- make-routes [db-conn]
   [""
    {"/api" {"/patients" {"" {:get (partial list-patients db-conn)
                              :post (partial create-patient db-conn)}
                          ["/" [#"\d+" :id]] {:get (partial get-patient db-conn)
-                                             :patch (partial update-patient db-conn)}}}}])
+                                             :patch (partial update-patient db-conn)
+                                             :delete (partial delete-patient db-conn)}}}}])
 
 (defn- wrap-edn-request [handler]
   (fn [request]

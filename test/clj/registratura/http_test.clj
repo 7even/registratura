@@ -83,3 +83,10 @@
       (let [{not-updated-patient :body} (get-response :get "/api/patients/1")]
         (is (= "foobar"
                (:patient/middle-name not-updated-patient)))))))
+
+(deftest delete-patient
+  (create-patient)
+  (let [{:keys [status]} (get-response :delete "/api/patients/1")]
+    (is (= 200 status))
+    (let [{new-patients-list :body} (get-response :get "/api/patients")]
+      (is (empty? new-patients-list)))))
