@@ -13,6 +13,11 @@
 
 (time-literals.read-write/print-time-literals-clj!)
 
+(defn- created [body]
+  {:status 201
+   :headers {}
+   :body body})
+
 (defn- unprocessable-entity [body]
   {:status 422
    :headers {}
@@ -73,7 +78,7 @@
   (if (s/valid? ::create-patient form-params)
     (let [attrs (select-keys form-params patient-attr-names)
           new-patient-id (db/create-patient db-conn attrs)]
-      (response {:patient/id new-patient-id}))
+      (created {:patient/id new-patient-id}))
     (unprocessable-entity (s/explain-data ::create-patient form-params))))
 
 (defn- make-routes [db-conn]

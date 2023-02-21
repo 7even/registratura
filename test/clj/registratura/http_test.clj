@@ -52,7 +52,7 @@
     (let [{:keys [status body]} (get-response :post
                                               "/api/patients"
                                               patient-attrs)]
-      (is (= 200 status))
+      (is (= 201 status))
       (is (= {:patient/id 1}
              body))
       (let [{new-patients-list :body} (get-response :get "/api/patients")]
