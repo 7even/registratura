@@ -108,15 +108,20 @@
 
 (defn- wrap-edn-request [handler]
   (fn [request]
-    (let [form-params (let [request-body (some-> request :body slurp)]
-                        (when (and (= (get-in request [:headers "content-type"])
-                                      "application/edn")
-                                   (not (str/blank? request-body)))
-                          (edn/read-string {:readers time-literals.read-write/tags}
-                                           request-body)))]
-      (handler (cond-> request
-                 (some? form-params)
-                 (assoc :form-params form-params))))))
+    (try
+      (let [form-params (let [request-body (some-> request :body slurp)]
+                          (when (and (= (get-in request [:headers "content-type"])
+                                        "application/edn")
+                                     (not (str/blank? request-body)))
+                            (edn/read-string {:readers time-literals.read-write/tags}
+                                             request-body)))]
+        (handler (cond-> request
+                   (some? form-params)
+                   (assoc :form-params form-params))))
+      (catch java.time.format.DateTimeParseException _
+        {:status 400
+         :headers {}
+         :body nil}))))
 
 (defn- wrap-edn-response [handler]
   (fn [request]
