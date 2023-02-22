@@ -20,6 +20,8 @@
                               org.postgresql/postgresql         {:mvn/version "42.5.3"}
                               io.github.HealthSamurai/dsql      {:git/sha "eb68b090c2f2e5a2abca4afb58af722abe2ab34c"}}
                  :extra-paths ["src/clj" "resources"]}
+           :cljs {:extra-deps {thheller/shadow-cljs {:mvn/version "2.21.0"}}
+                  :extra-paths ["src/cljs"]}
            :dev {:extra-deps {ring/ring-mock {:mvn/version "0.4.0"}}
                  :extra-paths ["dev" "test/clj"]}
            :test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.77.1236"}
