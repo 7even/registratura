@@ -20,7 +20,12 @@
                               org.postgresql/postgresql         {:mvn/version "42.5.3"}
                               io.github.HealthSamurai/dsql      {:git/sha "eb68b090c2f2e5a2abca4afb58af722abe2ab34c"}}
                  :extra-paths ["src/clj" "resources"]}
-           :cljs {:extra-deps {thheller/shadow-cljs {:mvn/version "2.21.0"}}
+           :cljs {:extra-deps {thheller/shadow-cljs {:mvn/version "2.21.0"}
+
+                               ;; re-frame & reagent
+                               re-frame/re-frame     {:mvn/version "1.3.0"}
+                               day8.re-frame/http-fx {:mvn/version "0.2.4"}
+                               reagent/reagent       {:mvn/version "1.2.0"}}
                   :extra-paths ["src/cljs"]}
            :dev {:extra-deps {ring/ring-mock {:mvn/version "0.4.0"}}
                  :extra-paths ["dev" "test/clj"]}

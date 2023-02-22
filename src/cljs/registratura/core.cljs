@@ -1,7 +1,17 @@
-(ns registratura.core)
+(ns registratura.core
+  (:require [reagent.dom :as rd]
+            [re-frame.core :as rf]))
+
+(defn interface []
+  [:h2 "Registratura"])
+
+(defn- render []
+  (rd/render [interface]
+             (js/document.getElementById "root")))
 
 (defn init []
-  (js/console.log "hello"))
+  (render))
 
 (defn load []
-  (js/console.log "load"))
+  (rf/clear-subscription-cache!)
+  (render))
