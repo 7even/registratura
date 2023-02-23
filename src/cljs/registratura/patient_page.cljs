@@ -1,5 +1,6 @@
 (ns registratura.patient-page
-  (:require [re-frame.core :as rf]))
+  (:require [re-frame.core :as rf]
+            [registratura.common :refer [<sub]]))
 
 (rf/reg-sub ::patient-id
   (fn [db]
@@ -8,6 +9,7 @@
         parse-long)))
 
 (defn page []
-  [:div {:style {:display :flex
-                 :justify-content :center}}
-   [:h2 (str "Patient #" @(rf/subscribe [::patient-id]))]])
+  (let [patient-id (<sub [::patient-id])]
+    [:div {:style {:display :flex
+                   :justify-content :center}}
+     [:h2 (str "Patient #" patient-id)]]))

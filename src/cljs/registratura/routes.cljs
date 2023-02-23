@@ -1,7 +1,8 @@
 (ns registratura.routes
   (:require [bidi.bidi :refer [match-route]]
             [pushy.core :as pushy]
-            [re-frame.core :as rf]))
+            [re-frame.core :as rf]
+            [registratura.common :refer [>evt]]))
 
 (def routes
   ["/" {"" :patients-list
@@ -15,10 +16,10 @@
   (fn [{:keys [db]} [_ route]]
     {:db (assoc db :current-route route)
      :fx [(when-let [page-load-event (get page-load-events (:handler route))]
-            (rf/dispatch [page-load-event route]))]}))
+            [:dispatch [page-load-event route]])]}))
 
 (def history
-  (pushy/pushy #(rf/dispatch [::set-route %])
+  (pushy/pushy #(>evt [::set-route %])
                (partial match-route routes)))
 
 (defn start []

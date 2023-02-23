@@ -1,9 +1,10 @@
 (ns registratura.core
-  (:require [reagent.dom :as rd]
+  (:require [re-frame.core :as rf]
+            [reagent.dom :as rd]
+            [registratura.common :refer [<sub]]
             [registratura.patients-list :as patients-list]
             [registratura.patient-page :as patient-page]
-            [registratura.routes :as routes]
-            [re-frame.core :as rf]))
+            [registratura.routes :as routes]))
 
 (rf/reg-sub ::current-route
   (fn [db]
@@ -17,7 +18,7 @@
    [:h2 "Page Not Found"]])
 
 (defn interface []
-  (let [{:keys [handler]} @(rf/subscribe [::current-route])]
+  (let [{:keys [handler]} (<sub [::current-route])]
     (case handler
       :patients-list [patients-list/page]
       :patient-page [patient-page/page]
