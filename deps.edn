@@ -25,7 +25,10 @@
                                ;; re-frame & reagent
                                re-frame/re-frame     {:mvn/version "1.3.0"}
                                day8.re-frame/http-fx {:mvn/version "0.2.4"}
-                               reagent/reagent       {:mvn/version "1.2.0"}}
+                               reagent/reagent       {:mvn/version "1.2.0"}
+
+                               ;; HTML pushState helpers
+                               kibu/pushy {:mvn/version "0.3.8"}}
                   :extra-paths ["src/cljs"]}
            :dev {:extra-deps {ring/ring-mock {:mvn/version "0.4.0"}}
                  :extra-paths ["dev" "test/clj"]}
