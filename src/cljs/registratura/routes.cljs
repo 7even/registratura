@@ -1,5 +1,5 @@
 (ns registratura.routes
-  (:require [bidi.bidi :refer [match-route]]
+  (:require [bidi.bidi :refer [match-route path-for]]
             [pushy.core :as pushy]
             [re-frame.core :as rf]
             [registratura.common :refer [>evt]]))
@@ -8,6 +8,9 @@
   ["/" {"" :patients-list
         "patients/new" :new-patient-page
         ["patients/" [#"\d+" :id]] :patient-page}])
+
+(def url-for
+  (partial path-for routes))
 
 (def page-load-events
   {:patients-list :registratura.patients-list/load-patients})

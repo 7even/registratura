@@ -116,7 +116,8 @@
   [db-conn]
   (->> (make-query db-conn
                    {:select :*
-                    :from :patients})
+                    :from :patients
+                    :order-by :id})
        (mapv normalize-patient)))
 
 (defn get-patient
