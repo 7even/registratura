@@ -2,6 +2,7 @@
   (:require [re-frame.core :as rf]
             [reagent.dom :as rd]
             [registratura.common :refer [<sub]]
+            [registratura.db :as db]
             [registratura.patients-list :as patients-list]
             [registratura.patient-page :as patient-page]
             [registratura.routes :as routes]))
@@ -30,6 +31,7 @@
 
 (defn init []
   (routes/start)
+  (rf/dispatch-sync [::db/initialize])
   (render))
 
 (defn load []

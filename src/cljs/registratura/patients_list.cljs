@@ -3,18 +3,21 @@
             day8.re-frame.http-fx
             [registratura.common :refer [<sub >evt]]
             [registratura.http :as http]
+            [registratura.patients-filter :as filter]
             [registratura.routes :as routes]
             [re-frame.core :as rf]
             [tick.core :as t]
             [tick.locale-en-us]))
 
 (rf/reg-event-fx ::load-patients
-  (fn []
-    {:fx [[:http-xhrio {:method :get
-                        :uri "/api/patients"
-                        :response-format (http/edn-response-format)
-                        :on-success [::patients-loaded]
-                        :on-failure [::failed-to-load-patients]}]]}))
+  (fn [{:keys [db]}]
+    (let [filter (:patients-filter db)]
+      {:fx [[:http-xhrio {:method :get
+                          :uri "/api/patients"
+                          :params filter
+                          :response-format (http/edn-response-format)
+                          :on-success [::patients-loaded]
+                          :on-failure [::failed-to-load-patients]}]]})))
 
 (rf/reg-event-db ::patients-loaded
   (fn [db [_ patients]]
@@ -34,42 +37,19 @@
 
 (rf/reg-sub ::patients
   (fn [db]
-    (let [current-filter (:patients-filter db)]
-      (cond->> (:patients db)
-        :always
-        (map (fn [{:patient/keys [first-name
-                                  middle-name
-                                  last-name]
-                   :as patient}]
-               (-> patient
-                   (dissoc :patient/first-name :patient/middle-name :patient/last-name)
-                   (assoc :patient/full-name
-                          (->> [first-name middle-name last-name]
-                               (remove str/blank?)
-                               (str/join " ")))
-                   (update :patient/gender (comp str/capitalize name))
-                   (update :patient/birthday (partial t/format date-formatter)))))
-
-        (some? current-filter)
-        (filter (fn [patient]
-                  (let [attr-values (-> patient
-                                        (dissoc :patient/id)
-                                        vals)]
-                    (some #(str/includes? (str/lower-case %)
-                                          (str/lower-case current-filter))
-                          attr-values))))))))
-
-(rf/reg-sub ::patients-filter
-  (fn [db]
-    (:patients-filter db)))
-
-(defn- search-box []
-  [:input {:style {:width "100%"}
-           :type :text
-           :value (<sub [::patients-filter])
-           :on-change (fn [e]
-                        (>evt [::change-patients-filter (-> e .-target .-value)]))
-           :placeholder "Begin typing your search query here"}])
+    (->> (:patients db)
+         (map (fn [{:patient/keys [first-name
+                                   middle-name
+                                   last-name]
+                    :as patient}]
+                (-> patient
+                    (dissoc :patient/first-name :patient/middle-name :patient/last-name)
+                    (assoc :patient/full-name
+                           (->> [first-name middle-name last-name]
+                                (remove str/blank?)
+                                (str/join " ")))
+                    (update :patient/gender (comp str/capitalize name))
+                    (update :patient/birthday (partial t/format date-formatter))))))))
 
 (def ^:private cell-style
   {:border-bottom "1px solid black"
@@ -84,7 +64,7 @@
    [:div {:style {:display :flex
                   :flex-direction :column
                   :gap "1rem"}}
-    [:div [search-box]]
+    [filter/filter-panel]
     [:div {:style {:width "1000px"
                    :display :grid
                    :grid-template-columns "2fr 1fr 1fr 2fr 150px"}}
