@@ -3,7 +3,8 @@
             [integrant.repl :refer [go halt set-prep!]]
             [registratura.core :refer [config]]
             [shadow.cljs.devtools.api :as shadow]
-            [shadow.cljs.devtools.server :as server]))
+            [shadow.cljs.devtools.server :as server]
+            [user.fake-data-generator :as fake-data-generator]))
 
 (set-prep! config)
 
@@ -30,3 +31,11 @@
   (server/start!)
   (shadow/watch :main)
   (shadow/nrepl-select :main))
+
+(defn create-fake-patients
+  "Creates fake data in the database for `required-patients-count` patients
+  (200 by default)."
+  ([] (create-fake-patients 200))
+  ([required-patients-count]
+   (fake-data-generator/create-fake-patients (db-conn)
+                                             required-patients-count)))
