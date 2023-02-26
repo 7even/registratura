@@ -110,12 +110,39 @@
     :always
     (update-keys ->snake_case_keyword)))
 
+(defmethod ql/to-sql
+  :pg/op
+  [acc opts [op operand & operands]]
+  (reduce (fn [acc' operand]
+            (-> acc'
+                (conj (name op))
+                (ql/to-sql opts operand)))
+          (ql/to-sql acc opts operand)
+          operands))
+
+(defn- fulltext-search-condition [search-query]
+  (let [fulltext-parts (->> [:first_name
+                             :middle_name
+                             :last_name
+                             :address
+                             :insurance_number]
+                            (map (fn [attr-name]
+                                   ^:pg/fn [:coalesce attr-name]))
+                            (interpose " "))
+        fulltext (with-meta (cons :|| fulltext-parts) {:pg/op true})
+        tsvector ^:pg/fn [:to_tsvector "english" fulltext]
+        tsquery ^:pg/fn [:plainto_tsquery search-query]]
+    ^:pg/op ["@@" tsvector tsquery]))
+
 (defn list-patients
   "Returns all patients from the database at `db-conn` as a vector of
   entity maps."
   [db-conn {:patient/keys [query genders min-age max-age] :as filter}]
   (let [years-from-age ^:pg/kfn[:extract :year :from ^:pg/fn[:age :birthday]]
         conditions (cond-> []
+                     (some? query)
+                     (conj (fulltext-search-condition query))
+
                      (= (count genders) 1)
                      (conj [:= :gender [:pg/cast (-> genders first name) :patient_gender]])
 

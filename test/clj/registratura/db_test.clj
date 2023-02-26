@@ -11,6 +11,11 @@
     (let [patients (sut/list-patients @db-conn {})]
       (is (= [(assoc patient-attrs :patient/id 1)]
              patients))))
+  (testing "with a search query"
+    (is (seq (sut/list-patients @db-conn
+                                {:patient/query "Vsevolod Romashov Tbilisi"})))
+    (is (empty? (sut/list-patients @db-conn
+                                   {:patient/query "Ivan Ivanov Moscow"}))))
   (testing "with gender filter"
     (is (seq (sut/list-patients @db-conn
                                 {:patient/genders [:gender/male :gender/female]})))
