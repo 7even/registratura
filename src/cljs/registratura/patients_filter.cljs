@@ -7,21 +7,21 @@
   (fn [db]
     (:patients-filter db)))
 
-(rf/reg-sub ::search-string
+(rf/reg-sub ::search-query
   :<- [::patients-filter]
   (fn [patients-filter]
-    (get patients-filter :patient/search "")))
+    (get patients-filter :patient/query "")))
 
-(rf/reg-event-db ::change-search-string
-  (fn [db [_ new-search-string]]
-    (if (str/blank? new-search-string)
+(rf/reg-event-db ::change-search-query
+  (fn [db [_ new-search-query]]
+    (if (str/blank? new-search-query)
       (update db
               :patients-filter
               dissoc
-              :patient/search)
+              :patient/query)
       (assoc-in db
-                [:patients-filter :patient/search]
-                new-search-string))))
+                [:patients-filter :patient/query]
+                new-search-query))))
 
 (rf/reg-sub ::include-patients-with-gender?
   :<- [::patients-filter]
@@ -39,53 +39,57 @@
                    (disj selected-genders toggled-gender)
                    (conj selected-genders toggled-gender))))))
 
-(rf/reg-sub ::age-filter
+(rf/reg-sub ::min-age
   :<- [::patients-filter]
-  (fn [patients-filter [_ filter-kind]]
-    (get-in patients-filter [:patient/age filter-kind] "")))
+  (fn [patients-filter]
+    (get patients-filter :patient/min-age "")))
 
-(rf/reg-event-db ::change-age-filter
-  (fn [db [_ filter-kind new-value]]
-    (if (str/blank? new-value)
-      (update-in db
-                 [:patients-filter :patient/age]
-                 dissoc
-                 filter-kind)
-      (assoc-in db
-                [:patients-filter :patient/age filter-kind]
-                (parse-long new-value)))))
+(rf/reg-sub ::max-age
+  :<- [::patients-filter]
+  (fn [patients-filter]
+    (get patients-filter :patient/max-age "")))
 
-(def ^:private max-search-string-length
+(rf/reg-event-db ::change-min-age
+  (fn [db [_ new-min-age]]
+    (if (str/blank? new-min-age)
+      (update db :patients-filter dissoc :patient/min-age)
+      (assoc-in db [:patients-filter :patient/min-age] (parse-long new-min-age)))))
+
+(rf/reg-event-db ::change-max-age
+  (fn [db [_ new-max-age]]
+    (if (str/blank? new-max-age)
+      (update db :patients-filter dissoc :patient/max-age)
+      (assoc-in db [:patients-filter :patient/max-age] (parse-long new-max-age)))))
+
+(def ^:private max-search-query-length
   100)
 
-(defn- get-filter-errors [{search-string :patient/search
-                           {min-age :minimum
-                            max-age :maximum} :patient/age}]
+(defn- get-filter-errors [{:patient/keys [query min-age max-age]}]
   (let [add-error (fnil conj [])]
     (cond-> {}
       (and (some? min-age)
            (neg? min-age))
-      (update-in [:patient/age :minimum]
-                 add-error
-                 "Minimum age cannot be negative")
+      (update :patient/min-age
+              add-error
+              "Minimum age cannot be negative")
 
       (and (some? max-age)
            (neg? max-age))
-      (update-in [:patient/age :maximum]
-                 add-error
-                 "Maximum age cannot be negative")
+      (update :patient/max-age
+              add-error
+              "Maximum age cannot be negative")
 
       (and (some? min-age)
            (some? max-age)
            (< max-age min-age))
-      (update-in [:patient/age :maximum]
-                 add-error
-                 "Maximum age cannot be lower than minimum age")
-
-      (> (count search-string) max-search-string-length)
-      (update :patient/search
+      (update :patient/max-age
               add-error
-              (str "Search string length cannot exceed " max-search-string-length " characters")))))
+              "Maximum age cannot be lower than minimum age")
+
+      (> (count query) max-search-query-length)
+      (update :patient/query
+              add-error
+              (str "Search query length cannot exceed " max-search-query-length " characters")))))
 
 (rf/reg-event-fx ::submit-new-filter
   (fn [{:keys [db]}]
@@ -96,20 +100,20 @@
          :fx [[:dispatch [:registratura.patients-list/load-patients]]]}
         {:db (assoc-in db [:patients-filter :errors] errors)}))))
 
-(rf/reg-sub ::search-string-errors
+(rf/reg-sub ::search-query-errors
   :<- [::patients-filter]
   (fn [patients-filter]
-    (get-in patients-filter [:errors :patient/search])))
+    (get-in patients-filter [:errors :patient/query])))
 
 (rf/reg-sub ::min-age-errors
   :<- [::patients-filter]
   (fn [patients-filter]
-    (get-in patients-filter [:errors :patient/age :minimum])))
+    (get-in patients-filter [:errors :patient/min-age])))
 
 (rf/reg-sub ::max-age-errors
   :<- [::patients-filter]
   (fn [patients-filter]
-    (get-in patients-filter [:errors :patient/age :maximum])))
+    (get-in patients-filter [:errors :patient/max-age])))
 
 (defn filter-panel []
   [:div {:style {:display :flex
@@ -119,18 +123,19 @@
    [:form {:style {:display :contents}
            :on-submit (fn [e]
                         (.preventDefault e))}
-    (let [error-messages (<sub [::search-string-errors])]
+    (let [error-messages (<sub [::search-query-errors])]
       [:div
        [:input {:type :text
-                :value (<sub [::search-string])
+                :value (<sub [::search-query])
                 :on-change (fn [e]
-                             (>evt [::change-search-string (v e)]))
+                             (>evt [::change-search-query (v e)]))
                 :placeholder "Search patients by name, address or insurance number"
                 :style (merge {:width "100%"}
                               (when (seq error-messages)
                                 error-input-style))}]
        (doall
         (for [message error-messages]
+          ^{:key message}
           [:div {:style {:color :red}} message]))])
     [:div {:style {:display :grid
                    :grid-template-columns "20% 11% 10% 1fr 10%"
@@ -145,15 +150,16 @@
      (let [error-messages (<sub [::min-age-errors])]
        [:<>
         [:input {:type :number
-                 :value (<sub [::age-filter :minimum])
+                 :value (<sub [::min-age])
                  :on-change (fn [e]
-                              (>evt [::change-age-filter :minimum (v e)]))
+                              (>evt [::change-min-age (v e)]))
                  :style (merge {:height "1rem"}
                                (when (seq error-messages)
                                  error-input-style))}]
         [:div {:style {:padding-left "10px"}}
          (doall
           (for [message error-messages]
+            ^{:key message}
             [:div {:style {:color :red}} message]))]])
      [:div {:style {:display :flex
                     :justify-content :flex-end}}
@@ -168,14 +174,15 @@
      (let [error-messages (<sub [::max-age-errors])]
        [:<>
         [:input {:type :number
-                 :value (<sub [::age-filter :maximum])
+                 :value (<sub [::max-age])
                  :on-change (fn [e]
-                              (>evt [::change-age-filter :maximum (v e)]))
+                              (>evt [::change-max-age (v e)]))
                  :style (merge {:height "1rem"}
                                (when (seq error-messages)
                                  error-input-style))}]
         [:div {:style {:padding-left "10px"}}
          (doall
           (for [message error-messages]
+            ^{:key message}
             [:div {:style {:color :red}} message]))]])
      [:div]]]])
