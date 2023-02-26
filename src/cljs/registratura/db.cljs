@@ -3,5 +3,5 @@
 
 (rf/reg-event-db ::initialize
   (fn [db]
-    {:patients-filter {:patient/gender #{:gender/male
-                                         :gender/female}}}))
+    {:patients-filter {:patient/genders #{:gender/male
+                                          :gender/female}}}))

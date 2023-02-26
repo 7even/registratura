@@ -14,14 +14,29 @@
   ([method url] (get-response method url {}))
   ([method url params]
    (let [handler (make-handler)
-         include-body? (contains? #{:post :patch} method)
+         request-with-body? (contains? #{:post :patch} method)
+         request-without-body? (not request-with-body?)
          parse-edn (fn [edn]
                      (edn/read-string {:readers time-literals.read-write/tags} edn))]
      (cond-> (mock/request method url)
-       include-body? (mock/content-type "application/edn")
-       include-body? (mock/body (pr-str params))
+       request-with-body? (mock/content-type "application/edn")
+       request-with-body? (mock/body (pr-str params))
+       request-without-body? (mock/query-string params)
        :always handler
        :always (update :body parse-edn)))))
+
+(def ^:private valid-patients-filter
+  {"patient/query" "vsevolod"
+   "patient/genders" ["gender/male" "gender/female"]
+   "patient/min-age" "20"
+   "patient/max-age" "50"})
+
+(deftest process-patient-filter-test
+  (is (= {:patient/query "vsevolod"
+          :patient/genders [:gender/male :gender/female]
+          :patient/min-age 20
+          :patient/max-age 50}
+         (sut/process-patient-filter valid-patients-filter))))
 
 (deftest list-patients-test
   (testing "on an empty patients table"
@@ -33,7 +48,22 @@
     (let [{:keys [status body]} (get-response :get "/api/patients")]
       (is (= 200 status))
       (is (= [(assoc patient-attrs :patient/id 1)]
-             body)))))
+             body)))
+    (testing "with valid filter params"
+      (let [{:keys [status body]} (get-response :get
+                                                "/api/patients"
+                                                valid-patients-filter)]
+        (is (= 200 status))
+        (is (seq body))))
+    (testing "with invalid filter params"
+      (doseq [filter-params [{"patient/genders" ["foo/bar"]}
+                             {"patient/min-age" "-1"}
+                             {"patient/min-age" "foobar"}
+                             {"patient/max-age" "-15"}]]
+        (let [{:keys [status]} (get-response :get
+                                             "/api/patients"
+                                             filter-params)]
+          (is (= 400 status)))))))
 
 (deftest get-patient-test
   (create-patient)

@@ -113,12 +113,24 @@
 (defn list-patients
   "Returns all patients from the database at `db-conn` as a vector of
   entity maps."
-  [db-conn]
-  (->> (make-query db-conn
-                   {:select :*
-                    :from :patients
-                    :order-by :id})
-       (mapv normalize-patient)))
+  [db-conn {:patient/keys [query genders min-age max-age] :as filter}]
+  (let [years-from-age ^:pg/kfn[:extract :year :from ^:pg/fn[:age :birthday]]
+        conditions (cond-> []
+                     (= (count genders) 1)
+                     (conj [:= :gender [:pg/cast (-> genders first name) :patient_gender]])
+
+                     (some? min-age)
+                     (conj [:<= min-age years-from-age])
+
+                     (some? max-age)
+                     (conj [:<= years-from-age max-age]))
+        query (merge {:select :*
+                      :from :patients
+                      :order-by :id}
+                     (when (seq conditions)
+                       {:where (cons :and conditions)}))]
+    (->> (make-query db-conn query)
+         (mapv normalize-patient))))
 
 (defn get-patient
   "Returns patient identified by `id` from the database at `db-conn`

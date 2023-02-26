@@ -27,13 +27,13 @@
   :<- [::patients-filter]
   (fn [patients-filter [_ gender]]
     (-> patients-filter
-        :patient/gender
+        :patient/genders
         (contains? gender))))
 
 (rf/reg-event-db ::toggle-gender-filter
   (fn [db [_ toggled-gender]]
     (update-in db
-               [:patients-filter :patient/gender]
+               [:patients-filter :patient/genders]
                (fn [selected-genders]
                  (if (contains? selected-genders toggled-gender)
                    (disj selected-genders toggled-gender)

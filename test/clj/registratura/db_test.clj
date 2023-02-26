@@ -1,5 +1,5 @@
 (ns registratura.db-test
-  (:require [clojure.test :refer [deftest is use-fixtures]]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [registratura.db :as sut]
             [registratura.test :refer :all]))
 
@@ -7,9 +7,27 @@
 
 (deftest list-patients-test
   (create-patient)
-  (let [patients (sut/list-patients @db-conn)]
-    (is (= [(assoc patient-attrs :patient/id 1)]
-           patients))))
+  (testing "without filtering"
+    (let [patients (sut/list-patients @db-conn {})]
+      (is (= [(assoc patient-attrs :patient/id 1)]
+             patients))))
+  (testing "with gender filter"
+    (is (seq (sut/list-patients @db-conn
+                                {:patient/genders [:gender/male :gender/female]})))
+    (is (seq (sut/list-patients @db-conn
+                                {:patient/genders [:gender/male]})))
+    (is (empty? (sut/list-patients @db-conn
+                                   {:patient/genders [:gender/female]}))))
+  (testing "with min-age"
+    (is (seq (sut/list-patients @db-conn
+                                {:patient/min-age 30})))
+    (is (empty? (sut/list-patients @db-conn
+                                   {:patient/min-age 50}))))
+  (testing "with max-age"
+    (is (seq (sut/list-patients @db-conn
+                                {:patient/max-age 50})))
+    (is (empty? (sut/list-patients @db-conn
+                                   {:patient/max-age 30})))))
 
 (deftest get-patient-test
   (create-patient)
@@ -21,7 +39,7 @@
   (let [new-patient-id (sut/create-patient @db-conn patient-attrs)]
     (is (= 1
            new-patient-id
-           (->> (sut/list-patients @db-conn)
+           (->> (sut/list-patients @db-conn {})
                 first
                 :patient/id)))))
 

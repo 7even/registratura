@@ -6,8 +6,9 @@
             [registratura.db :as db]
             [registratura.html :as html]
             [ring.adapter.jetty :refer [run-jetty]]
+            [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.resource :refer [wrap-resource]]
-            [ring.util.response :refer [content-type not-found response]]
+            [ring.util.response :refer [bad-request content-type not-found response]]
             [tick.core :as t]
             [time-literals.read-write]))
 
@@ -47,6 +48,18 @@
 (s/def :patient/insurance-number
   string?)
 
+(s/def :patient/query
+  string?)
+
+(s/def :patient/genders
+  (s/coll-of :patient/gender))
+
+(s/def :patient/min-age
+  (s/and int? (complement neg?)))
+
+(s/def :patient/max-age
+  (s/and int? (complement neg?)))
+
 (def patient-attr-names
   [:patient/first-name
    :patient/middle-name
@@ -55,6 +68,12 @@
    :patient/birthday
    :patient/address
    :patient/insurance-number])
+
+(s/def ::list-patients
+  (s/keys :opt [:patient/query
+                :patient/genders
+                :patient/min-age
+                :patient/max-age]))
 
 (s/def ::create-patient
   (s/keys :req [:patient/first-name
@@ -74,8 +93,29 @@
                 :patient/address
                 :patient/insurance-number]))
 
-(defn- list-patients [db-conn _]
-  (response (db/list-patients db-conn)))
+(defn- wrap-in-vector [v]
+  (if (vector? v)
+    v
+    (vector v)))
+
+(defn- update-if-exists [m k f]
+  (if (contains? m k)
+    (update m k f)
+    m))
+
+(defn process-patient-filter [filter-params]
+  (-> filter-params
+      (update-keys keyword)
+      (update-if-exists :patient/genders (comp (partial mapv keyword)
+                                               wrap-in-vector))
+      (update-if-exists :patient/min-age parse-long)
+      (update-if-exists :patient/max-age parse-long)))
+
+(defn- list-patients [db-conn {:keys [params]}]
+  (let [processed-params (process-patient-filter params)]
+    (if (s/valid? ::list-patients processed-params)
+      (response (db/list-patients db-conn processed-params))
+      (bad-request nil))))
 
 (defn- get-patient [db-conn {:keys [params]}]
   (let [id (-> params :id parse-long)]
@@ -147,6 +187,7 @@
     (-> (make-handler routes)
         wrap-edn-request
         wrap-edn-response
+        wrap-params
         (wrap-resource "public")
         wrap-html-page-response)))
 
