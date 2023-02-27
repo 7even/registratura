@@ -61,9 +61,9 @@
                   :flex-direction :column
                   :gap "1rem"}}
     [filter/filter-panel]
-    [:div {:style {:width "1000px"
+    [:div {:style {:width "1100px"
                    :display :grid
-                   :grid-template-columns "2fr 1fr 1fr 2fr 150px"}}
+                   :grid-template-columns "2fr 1fr 1fr 4fr 150px"}}
      [:div {:style header-style} "Name"]
      [:div {:style header-style} "Gender"]
      [:div {:style header-style} "Birthday"]
