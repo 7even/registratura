@@ -28,10 +28,6 @@
   (fn [db]
     (assoc db :unhandled-error? true)))
 
-(rf/reg-event-db ::change-patients-filter
-  (fn [db [_ new-filter]]
-    (assoc db :patients-filter new-filter)))
-
 (def ^:private date-formatter
   (t/formatter "dd.MM.YYYY"))
 
