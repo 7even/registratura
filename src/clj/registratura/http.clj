@@ -60,6 +60,12 @@
 (s/def :patient/max-age
   (s/and int? (complement neg?)))
 
+(s/def :pagination/limit
+  (s/and int? pos? #(<= % 100)))
+
+(s/def :pagination/offset
+  (s/and int? (complement neg?)))
+
 (def patient-attr-names
   [:patient/first-name
    :patient/middle-name
@@ -73,7 +79,9 @@
   (s/keys :opt [:patient/query
                 :patient/genders
                 :patient/min-age
-                :patient/max-age]))
+                :patient/max-age
+                :pagination/limit
+                :pagination/offset]))
 
 (s/def ::create-patient
   (s/keys :req [:patient/first-name
@@ -103,16 +111,18 @@
     (update m k f)
     m))
 
-(defn process-patient-filter [filter-params]
-  (-> filter-params
+(defn process-patient-list-params [params]
+  (-> params
       (update-keys keyword)
       (update-if-exists :patient/genders (comp (partial mapv keyword)
                                                wrap-in-vector))
       (update-if-exists :patient/min-age parse-long)
-      (update-if-exists :patient/max-age parse-long)))
+      (update-if-exists :patient/max-age parse-long)
+      (update-if-exists :pagination/limit parse-long)
+      (update-if-exists :pagination/offset parse-long)))
 
 (defn- list-patients [db-conn {:keys [params]}]
-  (let [processed-params (process-patient-filter params)]
+  (let [processed-params (process-patient-list-params params)]
     (if (s/valid? ::list-patients processed-params)
       (response (db/list-patients db-conn processed-params))
       (bad-request nil))))

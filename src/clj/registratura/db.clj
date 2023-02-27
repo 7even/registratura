@@ -137,7 +137,8 @@
 (defn list-patients
   "Returns all patients from the database at `db-conn` as a vector of
   entity maps."
-  [db-conn {:patient/keys [query genders min-age max-age] :as filter}]
+  [db-conn {:patient/keys [query genders min-age max-age]
+            :pagination/keys [limit offset]}]
   (let [years-from-age ^:pg/kfn[:extract :year :from ^:pg/fn[:age :birthday]]
         conditions (cond-> []
                      (some? query)
@@ -155,9 +156,19 @@
                       :from :patients
                       :order-by :id}
                      (when (seq conditions)
-                       {:where (cons :and conditions)}))]
-    (->> (make-query db-conn query)
-         (mapv normalize-patient))))
+                       {:where (cons :and conditions)})
+                     (when (some? limit)
+                       {:limit limit})
+                     (when (some? offset)
+                       {:offset offset}))
+        count-query (-> query
+                        (assoc :select {:count [:pg/count*]})
+                        (dissoc :order-by :limit :offset))]
+    {:entities (->> (make-query db-conn query)
+                    (mapv normalize-patient))
+     :total-count (-> (make-query db-conn count-query)
+                      first
+                      :count)}))
 
 (defn get-patient
   "Returns patient identified by `id` from the database at `db-conn`

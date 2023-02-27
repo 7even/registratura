@@ -5,34 +5,46 @@
 
 (use-fixtures :each with-db)
 
+(def ^:private found-response
+  {:entities [(assoc patient-attrs :patient/id 1)]
+   :total-count 1})
+
+(def ^:private not-found-response
+  {:entities []
+   :total-count 0})
+
 (deftest list-patients-test
   (create-patient)
   (testing "without filtering"
-    (let [patients (sut/list-patients @db-conn {})]
-      (is (= [(assoc patient-attrs :patient/id 1)]
-             patients))))
+    (is (= found-response
+           (sut/list-patients @db-conn {}))))
   (testing "with a search query"
-    (is (seq (sut/list-patients @db-conn
-                                {:patient/query "Vsevolod Romashov Tbilisi"})))
-    (is (empty? (sut/list-patients @db-conn
-                                   {:patient/query "Ivan Ivanov Moscow"}))))
+    (is (= found-response
+           (sut/list-patients @db-conn
+                              {:patient/query "Vsevolod Romashov Tbilisi"})))
+    (is (= not-found-response
+           (sut/list-patients @db-conn
+                              {:patient/query "Ivan Ivanov Moscow"}))))
   (testing "with gender filter"
-    (is (seq (sut/list-patients @db-conn
-                                {:patient/genders [:gender/male :gender/female]})))
-    (is (seq (sut/list-patients @db-conn
-                                {:patient/genders [:gender/male]})))
-    (is (empty? (sut/list-patients @db-conn
-                                   {:patient/genders [:gender/female]}))))
+    (is (= found-response
+           (sut/list-patients @db-conn
+                              {:patient/genders [:gender/male :gender/female]})))
+    (is (= found-response
+           (sut/list-patients @db-conn
+                              {:patient/genders [:gender/male]})))
+    (is (= not-found-response
+           (sut/list-patients @db-conn
+                              {:patient/genders [:gender/female]}))))
   (testing "with min-age"
-    (is (seq (sut/list-patients @db-conn
-                                {:patient/min-age 30})))
-    (is (empty? (sut/list-patients @db-conn
-                                   {:patient/min-age 50}))))
+    (is (= found-response
+           (sut/list-patients @db-conn {:patient/min-age 30})))
+    (is (= not-found-response
+           (sut/list-patients @db-conn {:patient/min-age 50}))))
   (testing "with max-age"
-    (is (seq (sut/list-patients @db-conn
-                                {:patient/max-age 50})))
-    (is (empty? (sut/list-patients @db-conn
-                                   {:patient/max-age 30})))))
+    (is (= found-response
+           (sut/list-patients @db-conn {:patient/max-age 50})))
+    (is (= not-found-response
+           (sut/list-patients @db-conn {:patient/max-age 30})))))
 
 (deftest get-patient-test
   (create-patient)
@@ -45,6 +57,7 @@
     (is (= 1
            new-patient-id
            (->> (sut/list-patients @db-conn {})
+                :entities
                 first
                 :patient/id)))))
 

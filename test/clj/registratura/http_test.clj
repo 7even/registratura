@@ -25,36 +25,38 @@
        :always handler
        :always (update :body parse-edn)))))
 
-(def ^:private valid-patients-filter
+(def ^:private valid-patients-list-params
   {"patient/query" "vsevolod"
    "patient/genders" ["gender/male" "gender/female"]
    "patient/min-age" "20"
    "patient/max-age" "50"})
 
-(deftest process-patient-filter-test
+(deftest process-patient-list-params-test
   (is (= {:patient/query "vsevolod"
           :patient/genders [:gender/male :gender/female]
           :patient/min-age 20
           :patient/max-age 50}
-         (sut/process-patient-filter valid-patients-filter))))
+         (sut/process-patient-list-params valid-patients-list-params))))
 
 (deftest list-patients-test
   (testing "on an empty patients table"
     (let [{:keys [status body]} (get-response :get "/api/patients")]
       (is (= 200 status))
-      (is (= [] body))))
+      (is (= {:entities []
+              :total-count 0}
+             body))))
   (testing "with an existing patient"
     (create-patient)
     (let [{:keys [status body]} (get-response :get "/api/patients")]
       (is (= 200 status))
-      (is (= [(assoc patient-attrs :patient/id 1)]
+      (is (= {:entities [(assoc patient-attrs :patient/id 1)]
+              :total-count 1}
              body)))
     (testing "with valid filter params"
-      (let [{:keys [status body]} (get-response :get
-                                                "/api/patients"
-                                                valid-patients-filter)]
-        (is (= 200 status))
-        (is (seq body))))
+      (let [{:keys [status]} (get-response :get
+                                           "/api/patients"
+                                           valid-patients-list-params)]
+        (is (= 200 status))))
     (testing "with invalid filter params"
       (doseq [filter-params [{"patient/genders" ["foo/bar"]}
                              {"patient/min-age" "-1"}
@@ -87,7 +89,7 @@
              body))
       (let [{new-patients-list :body} (get-response :get "/api/patients")]
         (is (= [(assoc patient-attrs :patient/id 1)]
-               new-patients-list)))))
+               (:entities new-patients-list))))))
   (testing "with invalid patient attributes"
     (let [{:keys [status]} (get-response :post
                                          "/api/patients"
@@ -119,4 +121,4 @@
   (let [{:keys [status]} (get-response :delete "/api/patients/1")]
     (is (= 200 status))
     (let [{new-patients-list :body} (get-response :get "/api/patients")]
-      (is (empty? new-patients-list)))))
+      (is (empty? (:entities new-patients-list))))))

@@ -9,19 +9,32 @@
             [tick.core :as t]
             [tick.locale-en-us]))
 
+(def ^:private patients-per-page
+  20)
+
 (rf/reg-event-fx ::load-patients
-  (fn [{:keys [db]}]
-    (let [filter (:patients-filter db)]
+  (fn [{:keys [db]} [_ _ load-more?]]
+    (let [filter (:patients-filter db)
+          loaded-patients-count (-> db :patients :entities count)]
       {:fx [[:http-xhrio {:method :get
                           :uri "/api/patients"
-                          :params filter
+                          :params (merge filter
+                                         {:pagination/limit patients-per-page
+                                          :pagination/offset (if load-more?
+                                                               loaded-patients-count
+                                                               0)})
                           :response-format (http/edn-response-format)
-                          :on-success [::patients-loaded]
+                          :on-success [::patients-loaded load-more?]
                           :on-failure [::failed-to-load-patients]}]]})))
 
 (rf/reg-event-db ::patients-loaded
-  (fn [db [_ patients]]
-    (assoc db :patients patients)))
+  (fn [db [_ load-more? {:keys [entities total-count]}]]
+    (if load-more?
+      (-> db
+          (update-in [:patients :entities] into entities)
+          (assoc-in [:patients :total-count] total-count))
+      (assoc db :patients {:entities entities
+                           :total-count total-count}))))
 
 ;; TODO: render unhandled error in the interface
 (rf/reg-event-db ::failed-to-load-patients
@@ -33,7 +46,7 @@
 
 (rf/reg-sub ::patients
   (fn [db]
-    (->> (:patients db)
+    (->> (get-in db [:patients :entities])
          (map (fn [{:patient/keys [first-name
                                    middle-name
                                    last-name]
@@ -46,6 +59,11 @@
                                 (str/join " ")))
                     (update :patient/gender (comp str/capitalize name))
                     (update :patient/birthday (partial t/format date-formatter))))))))
+
+(rf/reg-sub ::can-load-more?
+  (fn [db]
+    (> (get-in db [:patients :total-count])
+       (count (get-in db [:patients :entities])))))
 
 (def ^:private cell-style
   {:border-bottom "1px solid black"
@@ -84,4 +102,9 @@
          [:div {:style cell-style} gender]
          [:div {:style cell-style} birthday]
          [:div {:style cell-style} address]
-         [:div {:style cell-style} insurance-number]]))]]])
+         [:div {:style cell-style} insurance-number]]))]
+    [:div {:style {:display :flex
+                   :justify-content :center}}
+     [:button {:on-click #(>evt [::load-patients nil true])
+               :disabled (not (<sub [::can-load-more?]))}
+      "Load More"]]]])
