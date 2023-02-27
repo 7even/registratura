@@ -10,11 +10,6 @@
             [tick.core :as t]
             [tick.locale-en-us]))
 
-;; TODO: render unhandled error in the interface
-(rf/reg-event-db :unhandled-error
-  (fn [db]
-    (assoc db :unhandled-error? true)))
-
 (def ^:private patients-per-page
   20)
 
@@ -67,11 +62,6 @@
           (assoc-in [:patients :total-count] total-count))
       (assoc db :patients {:entities entities
                            :total-count total-count}))))
-
-(rf/reg-fx :dispatch-after-js-confirmation
-  (fn [[message event]]
-    (when (js/confirm message)
-      (>evt event))))
 
 (rf/reg-event-fx ::delete-patient-after-confirmation
   (fn [_ [_ patient-id]]
