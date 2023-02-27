@@ -61,7 +61,7 @@
   (s/and int? (complement neg?)))
 
 (s/def :pagination/limit
-  (s/and int? pos? #(<= % 100)))
+  (s/and int? pos?))
 
 (s/def :pagination/offset
   (s/and int? (complement neg?)))

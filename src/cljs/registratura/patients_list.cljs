@@ -1,5 +1,6 @@
 (ns registratura.patients-list
-  (:require [clojure.string :as str]
+  (:require [ajax.edn :as edn]
+            [clojure.string :as str]
             day8.re-frame.http-fx
             [registratura.common :refer [<sub >evt]]
             [registratura.http :as http]
@@ -9,23 +10,54 @@
             [tick.core :as t]
             [tick.locale-en-us]))
 
+;; TODO: render unhandled error in the interface
+(rf/reg-event-db :unhandled-error
+  (fn [db]
+    (assoc db :unhandled-error? true)))
+
 (def ^:private patients-per-page
   20)
 
+;; Pagination options for patients list:
+;; 1. initial page load:
+;;   {:pagination/limit 20
+;;    :pagination/offset 0}
+;; 2. click on "Load More" button:
+;;   {:pagination/limit 20
+;;    :pagination/offset loaded-patients-count}
+;; 3. reloading the list after deleting some patient:
+;;   {:pagination/limit loaded-patients-count
+;;    :pagination/offset 0}
+
 (rf/reg-event-fx ::load-patients
-  (fn [{:keys [db]} [_ _ load-more?]]
-    (let [filter (:patients-filter db)
-          loaded-patients-count (-> db :patients :entities count)]
+  (fn [{:keys [db]} [_ _ pagination-options load-more?]]
+    (let [filter (:patients-filter db)]
       {:fx [[:http-xhrio {:method :get
                           :uri "/api/patients"
                           :params (merge filter
-                                         {:pagination/limit patients-per-page
-                                          :pagination/offset (if load-more?
-                                                               loaded-patients-count
-                                                               0)})
+                                         (or pagination-options
+                                             {:pagination/limit patients-per-page
+                                              :pagination/offset 0}))
                           :response-format (http/edn-response-format)
                           :on-success [::patients-loaded load-more?]
-                          :on-failure [::failed-to-load-patients]}]]})))
+                          :on-failure [:unhandled-error]}]]})))
+
+(rf/reg-event-fx ::load-more-patients
+  (fn [{:keys [db]}]
+    (let [loaded-patients-count (-> db :patients :entities count)]
+      {:fx [[:dispatch [::load-patients
+                        nil
+                        {:pagination/limit patients-per-page
+                         :pagination/offset loaded-patients-count}
+                        true]]]})))
+
+(rf/reg-event-fx ::reload-patients
+  (fn [{:keys [db]}]
+    (let [loaded-patients-count (-> db :patients :entities count)]
+      {:fx [[:dispatch [::load-patients
+                        nil
+                        {:pagination/limit loaded-patients-count
+                         :pagination/offset 0}]]]})))
 
 (rf/reg-event-db ::patients-loaded
   (fn [db [_ load-more? {:keys [entities total-count]}]]
@@ -36,10 +68,25 @@
       (assoc db :patients {:entities entities
                            :total-count total-count}))))
 
-;; TODO: render unhandled error in the interface
-(rf/reg-event-db ::failed-to-load-patients
-  (fn [db]
-    (assoc db :unhandled-error? true)))
+(rf/reg-fx :dispatch-after-js-confirmation
+  (fn [[message event]]
+    (when (js/confirm message)
+      (>evt event))))
+
+(rf/reg-event-fx ::delete-patient-after-confirmation
+  (fn [_ [_ patient-id]]
+    {:fx [[:dispatch-after-js-confirmation
+           ["Delete patient?"
+            [::delete-patient patient-id]]]]}))
+
+(rf/reg-event-fx ::delete-patient
+  (fn [{:keys [db]} [_ patient-id]]
+    {:fx [[:http-xhrio {:method :delete
+                        :uri (str "/api/patients/" patient-id)
+                        :format (edn/edn-request-format)
+                        :response-format (http/edn-response-format)
+                        :on-success [::reload-patients]
+                        :on-failure [:unhandled-error]}]]}))
 
 (def ^:private date-formatter
   (t/formatter "dd.MM.YYYY"))
@@ -102,9 +149,15 @@
          [:div {:style cell-style} gender]
          [:div {:style cell-style} birthday]
          [:div {:style cell-style} address]
-         [:div {:style cell-style} insurance-number]]))]
+         [:div {:style (assoc cell-style
+                              :display :flex
+                              :justify-content :space-between)}
+          [:span insurance-number]
+          [:span {:style {:cursor :pointer}
+                  :on-click #(>evt [::delete-patient-after-confirmation id])}
+           "×"]]]))]
     [:div {:style {:display :flex
                    :justify-content :center}}
-     [:button {:on-click #(>evt [::load-patients nil true])
+     [:button {:on-click #(>evt [::load-more-patients])
                :disabled (not (<sub [::can-load-more?]))}
       "Load More"]]]])
