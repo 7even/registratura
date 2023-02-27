@@ -77,10 +77,10 @@
                  :justify-content :center}}
    [:div {:style {:display :flex
                   :flex-direction :column
-                  :gap "1rem"}}
+                  :gap "1rem"
+                  :width "1100px"}}
     [filter/filter-panel]
-    [:div {:style {:width "1100px"
-                   :display :grid
+    [:div {:style {:display :grid
                    :grid-template-columns "2fr 1fr 1fr 4fr 150px"}}
      [:div {:style header-style} "Name"]
      [:div {:style header-style} "Gender"]
