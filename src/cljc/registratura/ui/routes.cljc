@@ -1,8 +1,8 @@
-(ns registratura.routes
+(ns registratura.ui.routes
   (:require [bidi.bidi :refer [match-route path-for]]
-            [pushy.core :as pushy]
+            #?(:cljs [pushy.core :as pushy])
             [re-frame.core :as rf]
-            [registratura.common :refer [>evt]]))
+            [registratura.ui.common :refer [>evt]]))
 
 (def routes
   ["/" {"" :patients-list
@@ -13,7 +13,7 @@
   (partial path-for routes))
 
 (def page-load-events
-  {:patients-list :registratura.patients-list/load-patients})
+  {:patients-list :registratura.ui.patients-list/load-patients})
 
 (rf/reg-event-fx ::set-route
   (fn [{:keys [db]} [_ route]]
@@ -21,9 +21,11 @@
      :fx [(when-let [page-load-event (get page-load-events (:handler route))]
             [:dispatch [page-load-event route]])]}))
 
-(def history
-  (pushy/pushy #(>evt [::set-route %])
-               (partial match-route routes)))
+#?(:cljs
+   (def history
+     (pushy/pushy #(>evt [::set-route %])
+                  (partial match-route routes))))
 
-(defn start []
-  (pushy/start! history))
+#?(:cljs
+   (defn start []
+     (pushy/start! history)))

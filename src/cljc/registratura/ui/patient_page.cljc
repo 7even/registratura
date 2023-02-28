@@ -1,6 +1,6 @@
-(ns registratura.patient-page
+(ns registratura.ui.patient-page
   (:require [re-frame.core :as rf]
-            [registratura.common :refer [<sub]]))
+            [registratura.ui.common :refer [<sub]]))
 
 (rf/reg-sub ::patient-id
   (fn [db]

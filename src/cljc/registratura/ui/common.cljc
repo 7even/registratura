@@ -1,4 +1,4 @@
-(ns registratura.common
+(ns registratura.ui.common
   (:require [re-frame.core :as rf]))
 
 (defn <sub [subscription]
@@ -21,7 +21,8 @@
   (fn [db]
     (assoc db :unhandled-error? true)))
 
-(rf/reg-fx :dispatch-after-js-confirmation
-  (fn [[message event]]
-    (when (js/confirm message)
-      (>evt event))))
+#?(:cljs
+   (rf/reg-fx :dispatch-after-js-confirmation
+     (fn [[message event]]
+       (when (js/confirm message)
+         (>evt event)))))

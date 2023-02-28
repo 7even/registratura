@@ -1,6 +1,6 @@
-(ns registratura.patients-filter
+(ns registratura.ui.patients-filter
   (:require [clojure.string :as str]
-            [registratura.common :refer [<sub >evt error-input-style v]]
+            [registratura.ui.common :refer [<sub >evt error-input-style v]]
             [re-frame.core :as rf]))
 
 (rf/reg-sub ::patients-filter
@@ -97,7 +97,7 @@
           errors (get-filter-errors filter)]
       (if (empty? errors)
         {:db (update db :patients-filter dissoc :errors)
-         :fx [[:dispatch [:registratura.patients-list/load-patients]]]}
+         :fx [[:dispatch [:registratura.ui.patients-list/load-patients]]]}
         {:db (assoc-in db [:patients-filter :errors] errors)}))))
 
 (rf/reg-sub ::search-query-errors

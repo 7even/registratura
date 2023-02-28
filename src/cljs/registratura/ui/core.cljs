@@ -1,11 +1,11 @@
-(ns registratura.core
+(ns registratura.ui.core
   (:require [re-frame.core :as rf]
             [reagent.dom :as rd]
-            [registratura.common :refer [<sub]]
-            [registratura.db :as db]
-            [registratura.patients-list :as patients-list]
-            [registratura.patient-page :as patient-page]
-            [registratura.routes :as routes]))
+            [registratura.ui.common :refer [<sub]]
+            [registratura.ui.db :as db]
+            [registratura.ui.patients-list :as patients-list]
+            [registratura.ui.patient-page :as patient-page]
+            [registratura.ui.routes :as routes]))
 
 (rf/reg-sub ::current-route
   (fn [db]

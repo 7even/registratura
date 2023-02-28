@@ -1,11 +1,10 @@
-(ns registratura.patients-list
+(ns registratura.ui.patients-list
   (:require [ajax.edn :as edn]
             [clojure.string :as str]
-            day8.re-frame.http-fx
-            [registratura.common :refer [<sub >evt]]
-            [registratura.http :as http]
-            [registratura.patients-filter :as filter]
-            [registratura.routes :as routes]
+            [registratura.ui.common :refer [<sub >evt]]
+            #?(:cljs [registratura.ui.http :as http])
+            [registratura.ui.patients-filter :as filter]
+            [registratura.ui.routes :as routes]
             [re-frame.core :as rf]
             [tick.core :as t]
             [tick.locale-en-us]))
@@ -27,15 +26,14 @@
 (rf/reg-event-fx ::load-patients
   (fn [{:keys [db]} [_ _ pagination-options load-more?]]
     (let [filter (:patients-filter db)]
-      {:fx [[:http-xhrio {:method :get
-                          :uri "/api/patients"
-                          :params (merge filter
-                                         (or pagination-options
-                                             {:pagination/limit patients-per-page
-                                              :pagination/offset 0}))
-                          :response-format (http/edn-response-format)
-                          :on-success [::patients-loaded load-more?]
-                          :on-failure [:unhandled-error]}]]})))
+      {:fx [[:dispatch [:send-request {:method :get
+                                       :uri "/api/patients"
+                                       :params (merge filter
+                                                      (or pagination-options
+                                                          {:pagination/limit patients-per-page
+                                                           :pagination/offset 0}))
+                                       :on-success [::patients-loaded load-more?]
+                                       :on-failure [:unhandled-error]}]]]})))
 
 (rf/reg-event-fx ::load-more-patients
   (fn [{:keys [db]}]
@@ -71,12 +69,10 @@
 
 (rf/reg-event-fx ::delete-patient
   (fn [{:keys [db]} [_ patient-id]]
-    {:fx [[:http-xhrio {:method :delete
-                        :uri (str "/api/patients/" patient-id)
-                        :format (edn/edn-request-format)
-                        :response-format (http/edn-response-format)
-                        :on-success [::reload-patients]
-                        :on-failure [:unhandled-error]}]]}))
+    {:fx [[:dispatch [:send-request {:method :delete
+                                     :uri (str "/api/patients/" patient-id)
+                                     :on-success [::reload-patients]
+                                     :on-failure [:unhandled-error]}]]]}))
 
 (def ^:private date-formatter
   (t/formatter "dd.MM.YYYY"))

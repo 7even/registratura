@@ -1,5 +1,5 @@
 {:deps {:aliases [:cljs]}
  :builds {:main {:target :browser
                  :output-dir "resources/public/js"
-                 :modules {:main {:init-fn registratura.core/init}}
-                 :devtools {:after-load registratura.core/load}}}}
+                 :modules {:main {:init-fn registratura.ui.core/init}}
+                 :devtools {:after-load registratura.ui.core/load}}}}

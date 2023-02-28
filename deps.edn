@@ -32,7 +32,7 @@
 
                                ;; HTML pushState helpers
                                kibu/pushy {:mvn/version "0.3.8"}}
-                  :extra-paths ["src/cljs"]}
+                  :extra-paths ["src/cljs" "src/cljc"]}
            :dev {:extra-deps {ring/ring-mock {:mvn/version "0.4.0"}}
                  :extra-paths ["dev" "test/clj"]}
            :test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.77.1236"}
