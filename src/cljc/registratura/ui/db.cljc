@@ -2,6 +2,6 @@
   (:require [re-frame.core :as rf]))
 
 (rf/reg-event-db ::initialize
-  (fn [db]
+  (fn [db _]
     {:patients-filter {:patient/genders #{:gender/male
                                           :gender/female}}}))

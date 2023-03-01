@@ -34,8 +34,8 @@
                                kibu/pushy {:mvn/version "0.3.8"}}
                   :extra-paths ["src/cljs" "src/cljc"]}
            :dev {:extra-deps {ring/ring-mock {:mvn/version "0.4.0"}}
-                 :extra-paths ["dev" "test/clj"]}
+                 :extra-paths ["dev" "test/clj" "test/cljc"]}
            :test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.77.1236"}
                                ring/ring-mock {:mvn/version "0.4.0"}}
-                  :extra-paths ["test/clj"]
+                  :extra-paths ["test/clj" "test/cljc"]
                   :main-opts ["-m" "kaocha.runner"]}}}

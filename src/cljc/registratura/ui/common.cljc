@@ -7,6 +7,9 @@
 (defn >evt [event]
   (rf/dispatch event))
 
+(defn >evt! [event]
+  (rf/dispatch-sync event))
+
 (def error-input-style
   {:outline-color :red
    :border-color :red})

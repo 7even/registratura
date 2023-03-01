@@ -4,12 +4,12 @@
             [re-frame.core :as rf]))
 
 (rf/reg-sub ::patients-filter
-  (fn [db]
+  (fn [db _]
     (:patients-filter db)))
 
 (rf/reg-sub ::search-query
   :<- [::patients-filter]
-  (fn [patients-filter]
+  (fn [patients-filter _]
     (get patients-filter :patient/query "")))
 
 (rf/reg-event-db ::change-search-query
@@ -41,12 +41,12 @@
 
 (rf/reg-sub ::min-age
   :<- [::patients-filter]
-  (fn [patients-filter]
+  (fn [patients-filter _]
     (get patients-filter :patient/min-age "")))
 
 (rf/reg-sub ::max-age
   :<- [::patients-filter]
-  (fn [patients-filter]
+  (fn [patients-filter _]
     (get patients-filter :patient/max-age "")))
 
 (rf/reg-event-db ::change-min-age
@@ -92,7 +92,7 @@
               (str "Search query length cannot exceed " max-search-query-length " characters")))))
 
 (rf/reg-event-fx ::submit-new-filter
-  (fn [{:keys [db]}]
+  (fn [{:keys [db]} _]
     (let [filter (:patients-filter db)
           errors (get-filter-errors filter)]
       (if (empty? errors)
@@ -102,17 +102,17 @@
 
 (rf/reg-sub ::search-query-errors
   :<- [::patients-filter]
-  (fn [patients-filter]
+  (fn [patients-filter _]
     (get-in patients-filter [:errors :patient/query])))
 
 (rf/reg-sub ::min-age-errors
   :<- [::patients-filter]
-  (fn [patients-filter]
+  (fn [patients-filter _]
     (get-in patients-filter [:errors :patient/min-age])))
 
 (rf/reg-sub ::max-age-errors
   :<- [::patients-filter]
-  (fn [patients-filter]
+  (fn [patients-filter _]
     (get-in patients-filter [:errors :patient/max-age])))
 
 (defn filter-panel []
