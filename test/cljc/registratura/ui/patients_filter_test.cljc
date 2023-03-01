@@ -7,10 +7,7 @@
             [registratura.ui.patients-list :refer [load-patients-fx]]
             [registratura.ui.test :refer :all]))
 
-(use-fixtures :each
-  (fn [tests]
-    (tests)
-    (reset! requests [])))
+(use-fixtures :each with-stubbed-requests)
 
 (deftest filter-test
   (testing "in initial state"

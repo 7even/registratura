@@ -8,3 +8,7 @@
    (rf/reg-fx :send-request
      (fn [request]
        (swap! requests conj request))))
+
+(defn with-stubbed-requests [tests]
+  (tests)
+  (reset! requests []))

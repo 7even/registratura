@@ -86,7 +86,7 @@
   (t/formatter "dd.MM.YYYY"))
 
 (rf/reg-sub ::patients
-  (fn [db]
+  (fn [db _]
     (->> (get-in db [:patients :entities])
          (map (fn [{:patient/keys [first-name
                                    middle-name
@@ -102,7 +102,7 @@
                     (update :patient/birthday (partial t/format date-formatter))))))))
 
 (rf/reg-sub ::can-load-more?
-  (fn [db]
+  (fn [db _]
     (> (get-in db [:patients :total-count])
        (count (get-in db [:patients :entities])))))
 
