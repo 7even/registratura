@@ -1,9 +1,16 @@
 (ns registratura.ui.patients-filter-test
   (:require [clojure.string :as str]
-            [clojure.test :refer [deftest testing is]]
+            [clojure.test :refer [deftest testing is use-fixtures]]
             [registratura.ui.common :refer [<sub >evt!]]
             [registratura.ui.db :as db]
-            [registratura.ui.patients-filter :as sut]))
+            [registratura.ui.patients-filter :as sut]
+            [registratura.ui.patients-list :refer [load-patients-fx]]
+            [registratura.ui.test :refer :all]))
+
+(use-fixtures :each
+  (fn [tests]
+    (tests)
+    (reset! requests [])))
 
 (deftest filter-test
   (testing "in initial state"
@@ -45,32 +52,44 @@
     (testing "with search string that is too long"
       (>evt! [::sut/change-search-query (->> (repeat 20 "foobar")
                                              (str/join " "))])
-      (>evt! [::sut/submit-new-filter])
+      (>evt! [::sut/submit-new-filter load-patients-fx])
       (is (= ["Search query length cannot exceed 100 characters"]
              (<sub [::sut/search-query-errors])))
+      (is (empty? @requests))
       (>evt! [::sut/change-search-query ""]))
     (testing "with negative minimum age"
       (>evt! [::sut/change-min-age "-5"])
-      (>evt! [::sut/submit-new-filter])
+      (>evt! [::sut/submit-new-filter load-patients-fx])
       (is (= ["Minimum age cannot be negative"]
              (<sub [::sut/min-age-errors])))
+      (is (empty? @requests))
       (>evt! [::sut/change-min-age ""]))
     (testing "with negative maximum age"
       (>evt! [::sut/change-max-age "-10"])
-      (>evt! [::sut/submit-new-filter])
+      (>evt! [::sut/submit-new-filter load-patients-fx])
       (is (= ["Maximum age cannot be negative"]
              (<sub [::sut/max-age-errors])))
+      (is (empty? @requests))
       (>evt! [::sut/change-max-age ""]))
     (testing "with minimum age higher than maximum age"
       (>evt! [::sut/change-min-age "20"])
       (>evt! [::sut/change-max-age "18"])
-      (>evt! [::sut/submit-new-filter])
+      (>evt! [::sut/submit-new-filter load-patients-fx])
       (is (= ["Maximum age cannot be lower than minimum age"]
              (<sub [::sut/max-age-errors])))
+      (is (empty? @requests))
       (>evt! [::sut/change-min-age ""])
       (>evt! [::sut/change-max-age ""]))
     (testing "with valid filter"
-      (>evt! [::sut/submit-new-filter])
+      (>evt! [::sut/submit-new-filter load-patients-fx])
+      (is (= [{:method :get
+               :uri "/api/patients"
+               :params {:patient/genders #{:gender/male}
+                        :pagination/limit 20
+                        :pagination/offset 0}
+               :on-success [:registratura.ui.patients-list/patients-loaded false]
+               :on-failure [:unhandled-error]}]
+             @requests))
       (is (nil? (<sub [::sut/search-query-errors])))
       (is (nil? (<sub [::sut/min-age-errors])))
       (is (nil? (<sub [::sut/max-age-errors]))))))

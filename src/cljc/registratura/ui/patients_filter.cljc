@@ -92,12 +92,12 @@
               (str "Search query length cannot exceed " max-search-query-length " characters")))))
 
 (rf/reg-event-fx ::submit-new-filter
-  (fn [{:keys [db]} _]
+  (fn [{:keys [db]} [_ load-patients-fx-fn]]
     (let [filter (:patients-filter db)
           errors (get-filter-errors filter)]
       (if (empty? errors)
         {:db (update db :patients-filter dissoc :errors)
-         :fx [[:dispatch [:registratura.ui.patients-list/load-patients]]]}
+         :fx [(load-patients-fx-fn db nil false)]}
         {:db (assoc-in db [:patients-filter :errors] errors)}))))
 
 (rf/reg-sub ::search-query-errors
@@ -115,7 +115,7 @@
   (fn [patients-filter _]
     (get-in patients-filter [:errors :patient/max-age])))
 
-(defn filter-panel []
+(defn filter-panel [load-patients-fx-fn]
   [:div {:style {:display :flex
                  :flex-direction :column
                  :gap "1rem"
@@ -163,7 +163,7 @@
             [:div {:style {:color :red}} message]))]])
      [:div {:style {:display :flex
                     :justify-content :flex-end}}
-      [:button {:on-click #(>evt [::submit-new-filter])}
+      [:button {:on-click #(>evt [::submit-new-filter load-patients-fx-fn])}
        "Apply"]]
      [:label
       [:input {:type :checkbox

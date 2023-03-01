@@ -12,6 +12,23 @@
 (def ^:private patients-per-page
   20)
 
+(defn load-patients-fx
+  "Returns an effect that loads the patients list using `pagination-options`
+  (uses options for the first page by default). Dispatches `::patients-loaded`
+  on success, passing it `load-more?` (if true, new patients will be appended
+  to the end of the list of existing patients; otherwise new patients replace
+  the old list)."
+  [db pagination-options load-more?]
+  (let [filter (:patients-filter db)]
+    [:send-request {:method :get
+                    :uri "/api/patients"
+                    :params (merge (dissoc filter :errors)
+                                   (or pagination-options
+                                       {:pagination/limit patients-per-page
+                                        :pagination/offset 0}))
+                    :on-success [::patients-loaded load-more?]
+                    :on-failure [:unhandled-error]}]))
+
 ;; Pagination options for patients list:
 ;; 1. initial page load:
 ;;   {:pagination/limit 20
@@ -24,33 +41,24 @@
 ;;    :pagination/offset 0}
 
 (rf/reg-event-fx ::load-patients
-  (fn [{:keys [db]} [_ _ pagination-options load-more?]]
-    (let [filter (:patients-filter db)]
-      {:fx [[:dispatch [:send-request {:method :get
-                                       :uri "/api/patients"
-                                       :params (merge filter
-                                                      (or pagination-options
-                                                          {:pagination/limit patients-per-page
-                                                           :pagination/offset 0}))
-                                       :on-success [::patients-loaded load-more?]
-                                       :on-failure [:unhandled-error]}]]]})))
+  (fn [{:keys [db]} _]
+    {:fx [(load-patients-fx db nil false)]}))
 
 (rf/reg-event-fx ::load-more-patients
-  (fn [{:keys [db]}]
+  (fn [{:keys [db]} _]
     (let [loaded-patients-count (-> db :patients :entities count)]
-      {:fx [[:dispatch [::load-patients
-                        nil
-                        {:pagination/limit patients-per-page
-                         :pagination/offset loaded-patients-count}
-                        true]]]})))
+      {:fx [(load-patients-fx db
+                              {:pagination/limit patients-per-page
+                               :pagination/offset loaded-patients-count}
+                              true)]})))
 
 (rf/reg-event-fx ::reload-patients
-  (fn [{:keys [db]}]
+  (fn [{:keys [db]} _]
     (let [loaded-patients-count (-> db :patients :entities count)]
-      {:fx [[:dispatch [::load-patients
-                        nil
-                        {:pagination/limit loaded-patients-count
-                         :pagination/offset 0}]]]})))
+      {:fx [(load-patients-fx db
+                              {:pagination/limit loaded-patients-count
+                               :pagination/offset 0}
+                              false)]})))
 
 (rf/reg-event-db ::patients-loaded
   (fn [db [_ load-more? {:keys [entities total-count]}]]
@@ -69,10 +77,10 @@
 
 (rf/reg-event-fx ::delete-patient
   (fn [{:keys [db]} [_ patient-id]]
-    {:fx [[:dispatch [:send-request {:method :delete
-                                     :uri (str "/api/patients/" patient-id)
-                                     :on-success [::reload-patients]
-                                     :on-failure [:unhandled-error]}]]]}))
+    {:fx [[:send-request {:method :delete
+                          :uri (str "/api/patients/" patient-id)
+                          :on-success [::reload-patients]
+                          :on-failure [:unhandled-error]}]]}))
 
 (def ^:private date-formatter
   (t/formatter "dd.MM.YYYY"))
@@ -112,7 +120,7 @@
                   :flex-direction :column
                   :gap "1rem"
                   :width "1100px"}}
-    [filter/filter-panel]
+    [filter/filter-panel load-patients-fx]
     [:div {:style {:display :grid
                    :grid-template-columns "2fr 1fr 1fr 4fr 150px"}}
      [:div {:style header-style} "Name"]
