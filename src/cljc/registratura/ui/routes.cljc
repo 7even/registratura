@@ -14,7 +14,9 @@
   (partial path-for routes))
 
 (def page-load-events
-  {:patients-list :registratura.ui.patients-list/load-patients})
+  {:patients-list :registratura.ui.patients-list/load-patients
+   :new-patient-page :registratura.ui.patient-page/initialize-new-patient
+   :patient-page :registratura.ui.patient-page/load-patient})
 
 (rf/reg-event-fx ::set-route
   (fn [{:keys [db]} [_ route]]

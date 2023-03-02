@@ -1,7 +1,7 @@
 (ns registratura.ui.patients-list
   (:require [ajax.edn :as edn]
             [clojure.string :as str]
-            [registratura.ui.common :refer [<sub >evt]]
+            [registratura.ui.common :refer [<sub >evt full-name]]
             #?(:cljs [registratura.ui.http :as http])
             [registratura.ui.patients-filter :as filter]
             [registratura.ui.routes :as routes]
@@ -93,16 +93,10 @@
 (rf/reg-sub ::patients
   (fn [db _]
     (->> (get-in db [:patients :entities])
-         (map (fn [{:patient/keys [first-name
-                                   middle-name
-                                   last-name]
-                    :as patient}]
+         (map (fn [patient]
                 (-> patient
                     (dissoc :patient/first-name :patient/middle-name :patient/last-name)
-                    (assoc :patient/full-name
-                           (->> [first-name middle-name last-name]
-                                (remove str/blank?)
-                                (str/join " ")))
+                    (assoc :patient/full-name (full-name patient))
                     (update :patient/gender (comp str/capitalize name))
                     (update :patient/birthday (partial t/format date-formatter))))))))
 

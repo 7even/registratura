@@ -1,6 +1,7 @@
 (ns registratura.ui.patients-filter
   (:require [clojure.string :as str]
             [registratura.ui.common :refer [<sub >evt error-input-style v]]
+            [registratura.ui.routes :as routes]
             [re-frame.core :as rf]))
 
 (rf/reg-sub ::patients-filter
@@ -138,7 +139,7 @@
           ^{:key message}
           [:div {:style {:color :red}} message]))])
     [:div {:style {:display :grid
-                   :grid-template-columns "20% 11% 10% 1fr 10%"
+                   :grid-template-columns "20% 11% 10% 1fr 15%"
                    :grid-auto-rows "30px"
                    :align-items :center}}
      [:label
@@ -185,4 +186,7 @@
           (for [message error-messages]
             ^{:key message}
             [:div {:style {:color :red}} message]))]])
-     [:div]]]])
+     [:div {:style {:display :flex
+                    :justify-content :flex-end}}
+      [:a {:href (routes/url-for :new-patient-page)}
+       "Create new patient"]]]]])

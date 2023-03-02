@@ -1,5 +1,6 @@
 (ns registratura.ui.common
-  (:require [re-frame.core :as rf]))
+  (:require [clojure.string :as str]
+            [re-frame.core :as rf]))
 
 (defn <sub [subscription]
   @(rf/subscribe subscription))
@@ -18,6 +19,11 @@
   "Returns input value from its on-change event `e`."
   [e]
   (-> e .-target .-value))
+
+(defn full-name [{:patient/keys [first-name middle-name last-name]}]
+  (->> [first-name middle-name last-name]
+       (remove str/blank?)
+       (str/join " ")))
 
 (rf/reg-sub :loading?
   (fn [db _]
