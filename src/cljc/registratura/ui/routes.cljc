@@ -30,5 +30,14 @@
                   (partial match-route routes))))
 
 #?(:cljs
+   (defn go-to [& args]
+     (pushy/set-token! history (apply url-for args))))
+
+#?(:cljs
+   (rf/reg-fx :go-to
+     (fn [route-and-params]
+       (apply go-to route-and-params))))
+
+#?(:cljs
    (defn start []
      (pushy/start! history)))
