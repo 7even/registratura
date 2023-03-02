@@ -23,7 +23,8 @@
         component (get page-components handler)]
     ;; don't render anything until the router sets current route
     (when (some? component)
-      [layout [component]])))
+      [layout
+       ^{:key "page"} [component]])))
 
 (defn- render []
   (rd/render [interface]
