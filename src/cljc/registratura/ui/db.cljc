@@ -3,6 +3,5 @@
 
 (rf/reg-event-db ::initialize
   (fn [db _]
-    {:loading? true
-     :patients-filter {:patient/genders #{:gender/male
+    {:patients-filter {:patient/genders #{:gender/male
                                           :gender/female}}}))

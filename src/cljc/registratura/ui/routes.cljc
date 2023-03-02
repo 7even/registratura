@@ -7,7 +7,8 @@
 (def routes
   ["/" {"" :patients-list
         "patients/new" :new-patient-page
-        ["patients/" [#"\d+" :id]] :patient-page}])
+        ["patients/" [#"\d+" :id]] :patient-page
+        true :not-found}])
 
 (def url-for
   (partial path-for routes))
