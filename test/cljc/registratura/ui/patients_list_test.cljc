@@ -43,6 +43,7 @@
              :on-success [::sut/patients-loaded false]
              :on-failure [:unhandled-error]}]
            @requests))
+    (is (<sub [:loading?]))
     (>evt! [::sut/patients-loaded false first-page-data])
     (is (= [{:patient/id 1
              :patient/full-name "John Smith"
@@ -51,8 +52,10 @@
              :patient/address "Chicago, IL"
              :patient/insurance-number "145-29-7635"}]
            (<sub [::sut/patients])))
-    (is (<sub [::sut/can-load-more?])))
+    (is (<sub [::sut/can-load-more?]))
+    (is (not (<sub [:loading?]))))
   (testing "after loading next page"
+    (is (<sub [::sut/can-load-more?]))
     (>evt! [::sut/load-more-patients])
     (is (= {:method :get
             :uri "/api/patients"
@@ -62,6 +65,7 @@
             :on-success [::sut/patients-loaded true]
             :on-failure [:unhandled-error]}
            (last @requests)))
+    (is (not (<sub [::sut/can-load-more?])))
     (>evt! [::sut/patients-loaded true second-page-data])
     (is (= [{:patient/id 1
              :patient/full-name "John Smith"

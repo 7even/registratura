@@ -42,12 +42,14 @@
 
 (rf/reg-event-fx ::load-patients
   (fn [{:keys [db]} _]
-    {:fx [(load-patients-fx db nil false)]}))
+    {:db (assoc db :loading? true)
+     :fx [(load-patients-fx db nil false)]}))
 
 (rf/reg-event-fx ::load-more-patients
   (fn [{:keys [db]} _]
     (let [loaded-patients-count (-> db :patients :entities count)]
-      {:fx [(load-patients-fx db
+      {:db (assoc db :loading-more? true)
+       :fx [(load-patients-fx db
                               {:pagination/limit patients-per-page
                                :pagination/offset loaded-patients-count}
                               true)]})))
@@ -62,12 +64,15 @@
 
 (rf/reg-event-db ::patients-loaded
   (fn [db [_ load-more? {:keys [entities total-count]}]]
-    (if load-more?
-      (-> db
-          (update-in [:patients :entities] into entities)
-          (assoc-in [:patients :total-count] total-count))
-      (assoc db :patients {:entities entities
-                           :total-count total-count}))))
+    (-> db
+        (update-in [:patients :entities]
+                   (fn [existing-entities]
+                     (if load-more?
+                       (into existing-entities entities)
+                       entities)))
+        (assoc-in [:patients :total-count] total-count)
+        (assoc :loading? false
+               :loading-more? false))))
 
 (rf/reg-event-fx ::delete-patient-after-confirmation
   (fn [_ [_ patient-id]]
@@ -103,8 +108,9 @@
 
 (rf/reg-sub ::can-load-more?
   (fn [db _]
-    (> (get-in db [:patients :total-count])
-       (count (get-in db [:patients :entities])))))
+    (and (not (:loading-more? db))
+         (> (get-in db [:patients :total-count])
+            (count (get-in db [:patients :entities]))))))
 
 (def ^:private cell-style
   {:border-bottom "1px solid black"

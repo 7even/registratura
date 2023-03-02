@@ -19,6 +19,10 @@
   [e]
   (-> e .-target .-value))
 
+(rf/reg-sub :loading?
+  (fn [db _]
+    (:loading? db)))
+
 ;; TODO: render unhandled error in the interface
 (rf/reg-event-db :unhandled-error
   (fn [db]

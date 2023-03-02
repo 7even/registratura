@@ -3,6 +3,7 @@
             [reagent.dom :as rd]
             [registratura.ui.common :refer [<sub]]
             [registratura.ui.db :as db]
+            [registratura.ui.loading-screen :as loading-screen]
             [registratura.ui.patients-list :as patients-list]
             [registratura.ui.patient-page :as patient-page]
             [registratura.ui.routes :as routes]))
@@ -19,11 +20,15 @@
    [:h2 "Page Not Found"]])
 
 (defn interface []
-  (let [{:keys [handler]} (<sub [::current-route])]
-    (case handler
-      :patients-list [patients-list/page]
-      :patient-page [patient-page/page]
-      [not-found])))
+  (let [loading? (<sub [:loading?])
+        {:keys [handler]} (<sub [::current-route])]
+    (if loading?
+      [loading-screen/page]
+      (case handler
+        :patients-list [patients-list/page]
+        :patient-page [patient-page/page]
+        :new-patient-page [patient-page/page]
+        [not-found]))))
 
 (defn- render []
   (rd/render [interface]
