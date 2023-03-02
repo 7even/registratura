@@ -43,7 +43,6 @@
              :on-success [::sut/patients-loaded false]
              :on-failure [:unhandled-error]}]
            @requests))
-    (is (<sub [:loading?]))
     (>evt! [::sut/patients-loaded false first-page-data])
     (is (= [{:patient/id 1
              :patient/full-name "John Smith"
@@ -53,7 +52,7 @@
              :patient/insurance-number "145-29-7635"}]
            (<sub [::sut/patients])))
     (is (<sub [::sut/can-load-more?]))
-    (is (not (<sub [:loading?]))))
+    (is (<sub [::sut/patients-loaded?])))
   (testing "after loading next page"
     (is (<sub [::sut/can-load-more?]))
     (>evt! [::sut/load-more-patients])
