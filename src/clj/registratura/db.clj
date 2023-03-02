@@ -127,7 +127,7 @@
                              :address
                              :insurance_number]
                             (map (fn [attr-name]
-                                   ^:pg/fn [:coalesce attr-name]))
+                                   ^:pg/fn [:coalesce attr-name ""]))
                             (interpose " "))
         fulltext (with-meta (cons :|| fulltext-parts) {:pg/op true})
         tsvector ^:pg/fn [:to_tsvector "english" fulltext]
