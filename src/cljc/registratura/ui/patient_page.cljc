@@ -110,12 +110,12 @@
          :fx [[:send-request (if (new-patient? db)
                                {:method :post
                                 :uri "/api/patients"
-                                :params patient
+                                :params (dissoc patient :patient/id :errors)
                                 :on-success [::patient-created]
                                 :on-failure [:unhandled-error]}
                                {:method :patch
                                 :uri (str "/api/patients/" (:patient/id patient))
-                                :params (dissoc patient :patient/id)
+                                :params (dissoc patient :patient/id :errors)
                                 :on-success [::patient-saved]
                                 :on-failure [:unhandled-error]})]]}
         {:db (assoc-in db [:patient :errors] errors)}))))
