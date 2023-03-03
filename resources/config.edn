@@ -2,7 +2,8 @@
                    :dbname #or [#env DB_NAME
                                 #profile {:development "registratura"
                                           :test "registratura_test"}]
-                   :user #env DB_USER
+                   :user #or [#env DB_USER
+                              #env USER]
                    :password #env DB_PASSWORD}
  :http/handler {:db-conn #ig/ref :jdbc/connection
                 :server-opts {:port #long #or [#env HTTP_PORT

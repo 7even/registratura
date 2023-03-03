@@ -4,7 +4,9 @@
             [clojure.java.io :as io]
             [dsql.core :as ql]
             [dsql.pg :as dsql]
-            [next.jdbc :as jdbc])
+            [next.jdbc :as jdbc]
+            [ragtime.core :as rt]
+            [ragtime.jdbc :as rt-jdbc])
   (:import [java.time LocalDate]))
 
 (defn make-raw-query
@@ -30,18 +32,6 @@
                  (dsql/format query)
                  jdbc/snake-kebab-opts))
 
-(defn- fresh-db?
-  "Returns `true` if database at `db-conn` is empty (in fact just checks
-  if the \"patients\" table exists), `false` otherwise."
-  [db-conn]
-  (let [tables-query {:select 1
-                      :from :information_schema.tables
-                      :where {:ql/type :pg/and
-                              :type [:= :table_type "BASE TABLE"]
-                              :schema [:= :table_schema "public"]
-                              :name [:= :table_name [:pg/param "patients"]]}}]
-    (empty? (make-query db-conn tables-query))))
-
 (defn- get-db-schema
   "Returns database schema as an SQL string that can be run on an empty
   database in order to get the desired database structure."
@@ -54,16 +44,12 @@
   "Establishes the connection to database specified by `db-spec`, then migrates
   it if required."
   [db-spec]
-  (let [conn (->> db-spec
-                  (reduce-kv (fn [acc k v]
-                               (if (some? v)
-                                 (assoc acc k v)
-                                 acc))
-                             {})
-                  jdbc/get-connection)]
-    (when (fresh-db? conn)
-      (make-raw-query conn (get-db-schema)))
-    conn))
+  (let [rt-db (rt-jdbc/sql-database db-spec)
+        migrations (rt-jdbc/load-resources "migrations")]
+    (rt/migrate-all rt-db
+                    (rt/into-index migrations)
+                    migrations)
+    (jdbc/get-connection db-spec)))
 
 (defn stop
   "Closes the `conn` (database connection)."
