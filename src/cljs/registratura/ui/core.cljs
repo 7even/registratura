@@ -6,6 +6,7 @@
             [registratura.ui.patients-list :as patients-list]
             [registratura.ui.patient-page :as patient-page]
             [registratura.ui.routes :as routes]
+            [registratura.ui.unhandled-error :refer [error-modal]]
             [registratura.ui.views.common :refer [layout not-found]]))
 
 (rf/reg-sub ::current-route
@@ -23,8 +24,10 @@
         component (get page-components handler)]
     ;; don't render anything until the router sets current route
     (when (some? component)
-      [layout
-       ^{:key "page"} [component]])))
+      [:<>
+       [error-modal]
+       [layout
+        ^{:key "page"} [component]]])))
 
 (defn- render []
   (rd/render [interface]

@@ -29,7 +29,6 @@
   (fn [db _]
     (:loading? db)))
 
-;; TODO: render unhandled error in the interface
 (rf/reg-event-db :unhandled-error
   (fn [db]
     (assoc db :unhandled-error? true)))
