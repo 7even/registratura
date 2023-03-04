@@ -118,43 +118,52 @@
   (assoc cell-style :font-weight :bold))
 
 (defn page []
-  (if (<sub [::patients-loaded?])
-    [:div {:style {:display :flex
-                   :flex-direction :column
-                   :gap "1rem"}}
-     [filter/filter-panel load-patients-fx]
-     [:div {:style {:display :grid
-                    :grid-template-columns "2fr 1fr 1fr 4fr 150px"}}
-      [:div {:style header-style} "Name"]
-      [:div {:style header-style} "Gender"]
-      [:div {:style header-style} "Birthday"]
-      [:div {:style header-style} "Address"]
-      [:div {:style header-style} "Insurance number"]
-      (doall
-       (for [{:patient/keys [id
-                             full-name
-                             gender
-                             birthday
-                             address
-                             insurance-number]} (<sub [::patients])
-             :let [patient-url (routes/url-for :patient-page {:id id})]]
-         ^{:key id}
-         [:<>
-          [:div {:style cell-style}
-           [:a {:href patient-url} full-name]]
-          [:div {:style cell-style} gender]
-          [:div {:style cell-style} birthday]
-          [:div {:style cell-style} address]
-          [:div {:style (assoc cell-style
-                               :display :flex
-                               :justify-content :space-between)}
-           [:span insurance-number]
-           [:span {:style {:cursor :pointer}
-                   :on-click #(>evt [::delete-patient-after-confirmation id])}
-            "×"]]]))]
-     [:div {:style {:display :flex
-                    :justify-content :center}}
-      [:button {:on-click #(>evt [::load-more-patients])
-                :disabled (not (<sub [::can-load-more?]))}
-       "Load More"]]]
-    [loading]))
+  (let [patients-loaded? (<sub [::patients-loaded?])
+        patients (<sub [::patients])]
+    (if patients-loaded?
+      [:div {:style {:display :flex
+                     :flex-direction :column
+                     :gap "1rem"}}
+       [filter/filter-panel load-patients-fx]
+       [:div {:style {:display :grid
+                      :grid-template-columns "2fr 1fr 1fr 4fr 150px"}}
+        [:div {:style header-style} "Name"]
+        [:div {:style header-style} "Gender"]
+        [:div {:style header-style} "Birthday"]
+        [:div {:style header-style} "Address"]
+        [:div {:style header-style} "Insurance number"]
+        (if (seq patients)
+          (doall
+           (for [{:patient/keys [id
+                                 full-name
+                                 gender
+                                 birthday
+                                 address
+                                 insurance-number]} patients
+                 :let [patient-url (routes/url-for :patient-page {:id id})]]
+             ^{:key id}
+             [:<>
+              [:div {:style cell-style}
+               [:a {:href patient-url} full-name]]
+              [:div {:style cell-style} gender]
+              [:div {:style cell-style} birthday]
+              [:div {:style cell-style} address]
+              [:div {:style (assoc cell-style
+                                   :display :flex
+                                   :justify-content :space-between)}
+               [:span insurance-number]
+               [:span {:style {:cursor :pointer}
+                       :on-click #(>evt [::delete-patient-after-confirmation id])}
+                "×"]]]))
+          [:div {:style {:grid-column "1 / 6"
+                         :padding "10px"
+                         :display :flex
+                         :justify-content :center
+                         :font-style :italic}}
+           "No patients found"])]
+       [:div {:style {:display :flex
+                      :justify-content :center}}
+        [:button {:on-click #(>evt [::load-more-patients])
+                  :disabled (not (<sub [::can-load-more?]))}
+         "Load More"]]]
+      [loading])))
