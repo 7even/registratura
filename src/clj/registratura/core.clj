@@ -3,7 +3,8 @@
             [clojure.java.io :as io]
             [integrant.core :as ig]
             [registratura.db :as db]
-            [registratura.http :as http]))
+            [registratura.http :as http])
+  (:gen-class))
 
 (defmethod aero/reader 'ig/ref [_ _ value]
   (ig/ref value))
@@ -31,6 +32,5 @@
   (println ";; Stopping HTTP handler")
   (http/stop server))
 
-(defn -main []
-  (println "Hello!")
+(defn -main [& args]
   (ig/init (config)))

@@ -39,4 +39,6 @@
            :test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.77.1236"}
                                ring/ring-mock {:mvn/version "0.4.0"}}
                   :extra-paths ["test/clj" "test/cljc"]
-                  :main-opts ["-m" "kaocha.runner"]}}}
+                  :main-opts ["-m" "kaocha.runner"]}
+           :build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.3"}}
+                   :ns-default build}}}
