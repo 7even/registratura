@@ -16,8 +16,8 @@
 (deftest list-patients-test
   (create-patient)
   (testing "without filtering"
-    (is (not= found-response
-              (sut/list-patients @db-conn {}))))
+    (is (= found-response
+           (sut/list-patients @db-conn {}))))
   (testing "with a search query"
     (is (= found-response
            (sut/list-patients @db-conn
