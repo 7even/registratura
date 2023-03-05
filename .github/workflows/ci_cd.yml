@@ -54,4 +54,4 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: ghcr.io/7even/registratura
+          tags: ghcr.io/7even/registratura:latest
