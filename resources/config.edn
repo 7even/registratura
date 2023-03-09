@@ -1,4 +1,6 @@
 {:jdbc/connection {:dbtype "postgres"
+                   :host #or [#env DB_HOST
+                              "localhost"]
                    :dbname #or [#env DB_NAME
                                 #profile {:development "registratura"
                                           :test "registratura_test"}]
