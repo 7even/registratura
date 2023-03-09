@@ -1,0 +1,6 @@
+secretGenerator:
+  - name: pg-pass
+    literals:
+      - password=SecretPassword
+resources:
+  - postgres.yml
