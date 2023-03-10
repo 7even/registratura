@@ -55,6 +55,11 @@ and sends it to GitHub Container Registry on each push to the repository;
 so instead of building the image yourself you can get it by running
 `docker pull ghcr.io/7even/registratura:latest` (given you have the permissions).
 
+### Kubernetes
+
+Deployment to Kubernetes is described in detail
+[here](https://github.com/7even/registratura/blob/master/kube/README.md).
+
 ## Configuration
 
 Some aspects of the application can be configured using environment variables:
