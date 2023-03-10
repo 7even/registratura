@@ -1,4 +1,11 @@
 apiVersion: v1
+kind: Secret
+metadata:
+  name: pg-pass
+data:
+  password: U2VjcmV0UGFzc3dvcmQ= # SecretPassword
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: postgres
@@ -60,3 +67,54 @@ spec:
         - name: postgres-persistent-storage
           persistentVolumeClaim:
             claimName: postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+  labels:
+    app: registratura
+spec:
+  ports:
+    - port: 8888
+  selector:
+    app: registratura
+    tier: app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  labels:
+    app: registratura
+spec:
+  selector:
+    matchLabels:
+      app: registratura
+      tier: app
+  template:
+    metadata:
+      labels:
+        app: registratura
+        tier: app
+    spec:
+      containers:
+        - image: ghcr.io/7even/registratura:latest
+          name: registratura
+          env:
+            - name: DB_HOST
+              value: postgres
+            - name: DB_NAME
+              value: postgres
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pg-pass
+                  key: password
+          ports:
+            - containerPort: 8888
+              name: registratura
+      imagePullSecrets:
+        - name: ghcr-creds
