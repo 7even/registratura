@@ -61,6 +61,7 @@ Some aspects of the application can be configured using environment variables:
 
 | Variable name | Description             | Default value      |
 | ------------- | ----------------------- | ------------------ |
+| `DB_HOST`     | Postgres server host    | `"localhost"`      |
 | `DB_NAME`     | Postgres database name  | `"registratura"`   |
 | `DB_USER`     | Postgres user name      | current shell user |
 | `DB_PASSWORD` | Postgres password       | -                  |
