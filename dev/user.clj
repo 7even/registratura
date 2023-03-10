@@ -33,9 +33,24 @@
   (shadow/nrepl-select :main))
 
 (defn create-fake-patients
-  "Creates fake data in the database for `required-patients-count` patients
-  (200 by default)."
-  ([] (create-fake-patients 200))
-  ([required-patients-count]
-   (fake-data-generator/create-fake-patients (db-conn)
-                                             required-patients-count)))
+  "Creates fake data for `required-patients-count` patients (200 by default)
+  in the database at `conn` (uses connection from integrant system by default)."
+  [{:keys [required-patients-count
+           conn]
+    :or {required-patients-count 200
+         conn (db-conn)}}]
+  (fake-data-generator/create-fake-patients conn
+                                            required-patients-count))
+
+(comment
+  ;; to create fake patients in postgres inside k8s cluster, run:
+  ;; kubectl port-forward svc/postgres 15432:5432
+  ;;
+  ;; then eval the following code:
+  (let [conn (next.jdbc/get-connection {:dbtype "postgres"
+                                        :port 15432
+                                        :dbname "postgres"
+                                        :user "postgres"
+                                        :password "SecretPassword"})]
+    (create-fake-patients {:conn conn
+                           :required-patients-count 1000})))
