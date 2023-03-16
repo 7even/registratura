@@ -1,7 +1,6 @@
 (ns registratura.ui.patient-page-test
   (:require [clojure.test :refer [deftest testing is use-fixtures]]
             [registratura.ui.common :refer [<sub >evt!]]
-            [registratura.ui.db :as db]
             [registratura.ui.patient-page :as sut]
             [registratura.ui.routes :as routes]
             [registratura.ui.test :refer :all]))
@@ -10,7 +9,6 @@
 
 (deftest create-or-update-patient-test
   (testing "in initial state"
-    (>evt! [::db/initialize])
     (is (nil? (<sub [::sut/patient]))))
   (testing "after initializing new patient"
     (>evt! [::sut/initialize-new-patient])

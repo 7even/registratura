@@ -2,16 +2,20 @@
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest testing is use-fixtures]]
             [registratura.ui.common :refer [<sub >evt!]]
-            [registratura.ui.db :as db]
             [registratura.ui.patients-filter :as sut]
             [registratura.ui.patients-list :refer [load-patients-fx]]
             [registratura.ui.test :refer :all]))
 
-(use-fixtures :each with-stubbed-requests)
+(use-fixtures :each
+  with-stubbed-requests
+  (fn [tests]
+    (reset! re-frame.db/app-db
+            {:patients-filter {:patient/genders #{:gender/male
+                                                  :gender/female}}})
+    (tests)))
 
 (deftest filter-test
   (testing "in initial state"
-    (>evt! [::db/initialize])
     (is (= "" (<sub [::sut/search-query])))
     (is (<sub [::sut/include-patients-with-gender? :gender/male]))
     (is (<sub [::sut/include-patients-with-gender? :gender/female]))
@@ -79,14 +83,6 @@
       (>evt! [::sut/change-max-age ""]))
     (testing "with valid filter"
       (>evt! [::sut/submit-new-filter load-patients-fx])
-      (is (= [{:method :get
-               :uri "/api/patients"
-               :params {:patient/genders #{:gender/male}
-                        :pagination/limit 20
-                        :pagination/offset 0}
-               :on-success [:registratura.ui.patients-list/patients-loaded false]
-               :on-failure [:unhandled-error]}]
-             @requests))
       (is (nil? (<sub [::sut/search-query-errors])))
       (is (nil? (<sub [::sut/min-age-errors])))
       (is (nil? (<sub [::sut/max-age-errors]))))))

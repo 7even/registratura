@@ -43,7 +43,9 @@
 
 (rf/reg-event-fx ::load-patients
   (fn [{:keys [db]} _]
-    {:fx [(load-patients-fx db nil false)]}))
+    (let [new-db (filter/set-filter-from-query-params db)]
+      {:db new-db
+       :fx [(load-patients-fx new-db nil false)]})))
 
 (rf/reg-event-fx ::load-more-patients
   (fn [{:keys [db]} _]
@@ -124,7 +126,7 @@
       [:div {:style {:display :flex
                      :flex-direction :column
                      :gap "1rem"}}
-       [filter/filter-panel load-patients-fx]
+       [filter/filter-panel]
        [:div {:style {:display :grid
                       :grid-template-columns "2fr 1fr 1fr 4fr 150px"}}
         [:div {:style header-style} "Name"]

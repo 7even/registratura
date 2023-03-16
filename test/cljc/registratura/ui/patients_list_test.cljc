@@ -1,7 +1,6 @@
 (ns registratura.ui.patients-list-test
   (:require [clojure.test :refer [deftest testing is use-fixtures]]
             [registratura.ui.common :refer [<sub >evt!]]
-            [registratura.ui.db :as db]
             [registratura.ui.patients-list :as sut]
             [registratura.ui.test :refer :all]))
 
@@ -24,7 +23,6 @@
 
 (deftest list-test
   (testing "in initial state"
-    (>evt! [::db/initialize])
     (is (empty? (<sub [::sut/patients]))))
   (testing "after loading first page of patients"
     (>evt! [::sut/load-patients])

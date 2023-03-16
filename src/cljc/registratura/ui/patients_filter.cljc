@@ -4,6 +4,47 @@
             [registratura.ui.routes :as routes]
             [re-frame.core :as rf]))
 
+(def ^:private available-genders
+  #{:gender/male :gender/female})
+
+(defn- serialize-filter [{:patient/keys [query genders min-age max-age]}]
+  (cond-> {}
+    (not (str/blank? query))
+    (assoc :query query)
+
+    (and (seq genders)
+         (not= genders available-genders))
+    (assoc :genders (->> genders
+                         (map name)
+                         (str/join ",")))
+
+    (some? min-age)
+    (assoc :min-age min-age)
+
+    (some? max-age)
+    (assoc :max-age max-age)))
+
+(defn- deserialize-filter [{:keys [query genders min-age max-age]}]
+  (merge (when (some? query)
+           {:patient/query query})
+         (if (some? genders)
+           {:patient/genders (->> (str/split genders #",")
+                                  (map #(keyword "gender" %))
+                                  (into #{}))}
+           {:patient/genders available-genders})
+         (when-let [min-age-number (and (some? min-age)
+                                        (parse-long min-age))]
+           {:patient/min-age min-age-number})
+         (when-let [max-age-number (and (some? max-age)
+                                        (parse-long max-age))]
+           {:patient/max-age max-age-number})))
+
+(defn set-filter-from-query-params [db]
+  (let [filter (-> db
+                   (get-in [:current-route :query-params])
+                   deserialize-filter)]
+    (assoc db :patients-filter filter)))
+
 (rf/reg-sub ::patients-filter
   (fn [db _]
     (:patients-filter db)))
@@ -36,9 +77,11 @@
     (update-in db
                [:patients-filter :patient/genders]
                (fn [selected-genders]
-                 (if (contains? selected-genders toggled-gender)
-                   (disj selected-genders toggled-gender)
-                   (conj selected-genders toggled-gender))))))
+                 (let [toggle-fn (-> (if (contains? selected-genders toggled-gender)
+                                       disj
+                                       conj)
+                                     (fnil #{}))]
+                   (toggle-fn selected-genders toggled-gender))))))
 
 (rf/reg-sub ::min-age
   :<- [::patients-filter]
@@ -93,12 +136,12 @@
               (str "Search query length cannot exceed " max-search-query-length " characters")))))
 
 (rf/reg-event-fx ::submit-new-filter
-  (fn [{:keys [db]} [_ load-patients-fx-fn]]
+  (fn [{:keys [db]} _]
     (let [filter (:patients-filter db)
           errors (get-filter-errors filter)]
       (if (empty? errors)
         {:db (update db :patients-filter dissoc :errors)
-         :fx [(load-patients-fx-fn db nil false)]}
+         :fx [[:go-to [:patients-list {} (serialize-filter filter)]]]}
         {:db (assoc-in db [:patients-filter :errors] errors)}))))
 
 (rf/reg-sub ::search-query-errors
@@ -116,7 +159,7 @@
   (fn [patients-filter _]
     (get-in patients-filter [:errors :patient/max-age])))
 
-(defn filter-panel [load-patients-fx-fn]
+(defn filter-panel []
   [:div {:style {:display :flex
                  :flex-direction :column
                  :gap "1rem"
@@ -164,7 +207,7 @@
             [:div {:style {:color :red}} message]))]])
      [:div {:style {:display :flex
                     :justify-content :flex-end}}
-      [:button {:on-click #(>evt [::submit-new-filter load-patients-fx-fn])}
+      [:button {:on-click #(>evt [::submit-new-filter])}
        "Apply"]]
      [:label
       [:input {:type :checkbox
